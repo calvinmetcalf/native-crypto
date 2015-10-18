@@ -1,0 +1,24 @@
+{
+  "name": "native-hash",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "node test.js"
+  },
+  "author": "Calvin Metcalf <calvin.metcalf@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "buffer-equal-constant-time": "^1.0.1",
+    "create-hash": "^1.1.2",
+    "create-hmac": "^1.1.4",
+    "debug": "^2.2.0"
+  },
+  "devDependencies": {
+    "tape": "^4.2.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:calvinmetcalf/native-crypto.git"
+  }
+}
