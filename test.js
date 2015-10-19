@@ -3,12 +3,14 @@ if (process.browser) {
   window.myDebug = require('debug');
   window.myDebug.enable('native-crypto:*');
 }
+var jwk = require('./jwk');
 var crypto = require('crypto');
 var test = require('tape');
 var Hash = require('./hash');
 var Hmac = require('./hmac');
 var encrypt = require('./encrypt');
 var decrypt = require('./decrypt');
+var ECDH = require('./ecdh');
 test('hash', function (t) {
   var buf = new Buffer(8);
   buf.fill(0);
@@ -71,3 +73,80 @@ test('encrypt/decrypt', function (t) {
     t.end();
   });
 });
+test('ecdh p-256', function (t) {
+  var nodeECDH = crypto.createECDH('prime256v1');
+  var ourECDH = new ECDH('prime256v1');
+  var nodePublic, ourPublic;
+  ourECDH.getPublic().then(function (_ourPublic) {
+    ourPublic = _ourPublic;
+    nodePublic = nodeECDH.generateKeys();
+    return ourECDH.computeSecret(jwk.toJwk(nodePublic, 'P-256'));
+  }).then(function (ourValue) {
+    var nodeValue = nodeECDH.computeSecret(jwk.fromJwk(ourPublic));
+    t.equals(ourValue.toString('hex'), nodeValue.toString('hex'));
+    t.end();
+  }).catch(function (e) {
+    t.error(e);
+    t.end();
+  });
+});
+test('ecdh p-256 with privatekeys', function (t) {
+  var nodeECDH = crypto.createECDH('prime256v1');
+  var ourECDH = new ECDH('prime256v1');
+  ourECDH.getPrivate().then(function (priv) {
+    var ourECDH2 = new ECDH('prime256v1', priv);
+    var nodePublic, ourPublic, nodeValue;
+    ourECDH.getPublic().then(function (_ourPublic) {
+      ourPublic = _ourPublic;
+      nodePublic = nodeECDH.generateKeys();
+      return ourECDH.computeSecret(jwk.toJwk(nodePublic, 'P-256'));
+    }).then(function (ourValue) {
+      nodeValue = nodeECDH.computeSecret(jwk.fromJwk(ourPublic));
+      t.equals(ourValue.toString('hex'), nodeValue.toString('hex'));
+      return ourECDH2.getPublic();
+    }).then(function (pub){
+      var ourValue2 = nodeECDH.computeSecret(jwk.fromJwk(pub));
+      t.equals(ourValue2.toString('hex'), nodeValue.toString('hex'));
+      t.end();
+    }).catch(function (e) {
+      t.error(e);
+      t.end();
+    });
+  });
+});
+if (!process.browser) {
+  test('ecdh p-384', function (t) {
+    var nodeECDH = crypto.createECDH('secp384r1');
+    var ourECDH = new ECDH('secp384r1');
+    var nodePublic, ourPublic;
+    ourECDH.getPublic().then(function (_ourPublic) {
+      ourPublic = _ourPublic;
+      nodePublic = nodeECDH.generateKeys();
+      return ourECDH.computeSecret(jwk.toJwk(nodePublic, 'P-384'));
+    }).then(function (ourValue) {
+      var nodeValue = nodeECDH.computeSecret(jwk.fromJwk(ourPublic));
+      t.equals(ourValue.toString('hex'), nodeValue.toString('hex'));
+      t.end();
+    }).catch(function (e) {
+      t.error(e);
+      t.end();
+    });
+  });
+  test('ecdh p-521', function (t) {
+    var nodeECDH = crypto.createECDH('secp521r1');
+    var ourECDH = new ECDH('secp521r1');
+    var nodePublic, ourPublic;
+    ourECDH.getPublic().then(function (_ourPublic) {
+      ourPublic = _ourPublic;
+      nodePublic = nodeECDH.generateKeys();
+      return ourECDH.computeSecret(jwk.toJwk(nodePublic, 'P-521'));
+    }).then(function (ourValue) {
+      var nodeValue = nodeECDH.computeSecret(jwk.fromJwk(ourPublic));
+      t.equals(ourValue.toString('hex'), nodeValue.toString('hex'));
+      t.end();
+    }).catch(function (e) {
+      t.error(e);
+      t.end();
+    });
+  });
+}

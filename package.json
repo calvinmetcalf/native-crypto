@@ -5,29 +5,34 @@
   "main": "index.js",
   "scripts": {
     "test": "node test.js",
-    "browser": "zuul --local 8080 -- test.js"
+    "browser": "zuul --no-coverage --local 8080 -- test.js"
   },
   "author": "Calvin Metcalf <calvin.metcalf@gmail.com>",
   "license": "MIT",
   "dependencies": {
     "browserify-aes": "^1.0.5",
     "buffer-equal-constant-time": "^1.0.1",
+    "create-ecdh": "^2.0.2",
     "create-hash": "^1.1.2",
     "create-hmac": "^1.1.4",
-    "debug": "^2.2.0"
+    "debug": "^2.2.0",
+    "inline-process-browser": "^1.0.0",
+    "unreachable-branch-transform": "^0.5.0",
+    "babelify": "^6.3.0"
   },
   "devDependencies": {
-    "babelify": "^6.3.0",
     "tape": "^4.2.1",
     "zuul": "^3.6.0"
-  },
-  "browserify": {
-    "transform": [
-      "babelify"
-    ]
   },
   "repository": {
     "type": "git",
     "url": "git@github.com:calvinmetcalf/native-crypto.git"
+  },
+  "browserify": {
+    "transform": [
+      "inline-process-browser",
+      "unreachable-branch-transform",
+      "babelify"
+    ]
   }
 }

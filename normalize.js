@@ -7,7 +7,14 @@ var toNode = {
   'sha384': 'SHA384',
   'sha-384': 'SHA384',
   'sha-512': 'SHA512',
-  'sha512': 'SHA512'
+  'sha512': 'SHA512',
+  'p-256': 'prime256v1',
+  'prime256v1': 'prime256v1',
+  'secp256r1': 'prime256v1',
+  'secp384r1': 'secp384r1',
+  'p-384': 'secp384r1',
+  'secp521r1': 'secp521r1',
+  'p-521': 'secp521r1'
 };
 var toBrowser = {
   'sha256': 'SHA-256',
@@ -15,11 +22,24 @@ var toBrowser = {
   'sha384': 'SHA-384',
   'sha-384': 'SHA-384',
   'sha-512': 'SHA-512',
-  'sha512': 'SHA-512'
-}
+  'sha512': 'SHA-512',
+  'p-256': 'P-256',
+  'prime256v1': 'P-256',
+  'secp256r1': 'P-256',
+  'secp384r1': 'P-384',
+  'p-384': 'P-384',
+  'secp521r1': 'P-521',
+  'p-521': 'P-521'
+};
 function normalize(name, node) {
+  var out;
   if (node) {
-    return toNode[name.toLowerCase()];
+    out = toNode[name.toLowerCase()];
+  } else {
+    out = toBrowser[name.toLowerCase()];
   }
-  return toBrowser[name.toLowerCase()];
+  if (out) {
+    return out;
+  }
+  throw new Error(`unknown name: ${name}`);
 }
