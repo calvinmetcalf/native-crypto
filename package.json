@@ -23,6 +23,7 @@
     "unreachable-branch-transform": "^0.5.0"
   },
   "devDependencies": {
+    "asn1.js": "^2.2.1",
     "tape": "^4.2.1",
     "zuul": "^3.6.0"
   },

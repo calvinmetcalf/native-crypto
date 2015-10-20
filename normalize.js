@@ -2,6 +2,9 @@
 
 module.exports = normalize;
 var toNode = {
+  'sha': 'SHA1',
+  'sha-1': 'SHA1',
+  'sha1': 'SHA1',
   'sha256': 'SHA256',
   'sha-256': 'SHA256',
   'sha384': 'SHA384',
@@ -17,6 +20,9 @@ var toNode = {
   'p-521': 'secp521r1'
 };
 var toBrowser = {
+  'sha': 'SHA-1',
+  'sha-1': 'SHA-1',
+  'sha1': 'SHA-1',
   'sha256': 'SHA-256',
   'sha-256': 'SHA-256',
   'sha384': 'SHA-384',

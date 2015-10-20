@@ -3,6 +3,7 @@ if (process.browser) {
   window.myDebug = require('debug');
   window.myDebug.enable('native-crypto:*');
 }
+var asn1 = require('asn1.js');
 var jwk = require('./jwk');
 var crypto = require('crypto');
 var test = require('tape');
@@ -13,42 +14,66 @@ var decrypt = require('./decrypt');
 var ECDH = require('./ecdh');
 var Signature = require('./signature');
 var jwk2pem = require('jwk-to-pem');
-
+var ecSig = asn1.define('signature', function () {this.seq().obj(this.key('r').int(),this.key('s').int());});
 test('hash', function (t) {
   var buf = new Buffer(8);
   buf.fill(0);
-  var nodeHash = crypto.createHash('sha256').update(buf).digest().toString('hex');
-  new Hash('sha-256').update(buf).digest().then(function (ourHash) {
-    t.equals(nodeHash, ourHash.toString('hex'));
-    t.end();
-  }).catch(function (e) {
-    t.ok(false, e.stack);
-    t.end();
-  });
+  eachAlgo('sha1', t);
+  eachAlgo('sha256', t);
+  eachAlgo('sha384', t);
+  eachAlgo('sha512', t);
+  function eachAlgo(algo, t) {
+    t.test(algo, function (t) {
+      var nodeHash = crypto.createHash(algo).update(buf).digest().toString('hex');
+      new Hash(algo).update(buf).digest().then(function (ourHash) {
+        t.equals(nodeHash, ourHash.toString('hex'));
+        t.end();
+      }).catch(function (e) {
+        t.ok(false, e.stack);
+        t.end();
+      });
+    });
+  }
 });
 test('hmac sign', function (t) {
   var buf = new Buffer(8);
   buf.fill(0);
-  var nodeHash = crypto.createHmac('sha256', buf).update(buf).digest().toString('hex');
-  new Hmac('sha-256', buf).update(buf).digest().then(function (ourHash) {
-    t.equals(nodeHash, ourHash.toString('hex'), 'worked');
-    t.end();
-  }).catch(function (e) {
-    t.ok(false, e.stack);
-    t.end();
-  });
+  eachAlgo('sha1', t);
+  eachAlgo('sha256', t);
+  eachAlgo('sha384', t);
+  eachAlgo('sha512', t);
+  function eachAlgo(algo, t) {
+    t.test(algo, function (t) {
+      var nodeHash = crypto.createHmac(algo, buf).update(buf).digest().toString('hex');
+      new Hmac(algo, buf).update(buf).digest().then(function (ourHash) {
+        t.equals(nodeHash, ourHash.toString('hex'), 'worked');
+        t.end();
+      }).catch(function (e) {
+        t.ok(false, e.stack);
+        t.end();
+      });
+    });
+  }
 });
 test('hmac verify', function (t) {
   var buf = new Buffer(8);
   buf.fill(0);
-  var nodeHash = crypto.createHmac('sha256', buf).update(buf).digest();
-  new Hmac('sha-256', buf, nodeHash).update(buf).verify().then(function (ourHash) {
-    t.ok(ourHash, 'worked');
-    t.end();
-  }).catch(function (e) {
-    t.ok(false, e.stack);
-    t.end();
-  });
+  eachAlgo('sha1', t);
+  eachAlgo('sha256', t);
+  eachAlgo('sha384', t);
+  eachAlgo('sha512', t);
+  function eachAlgo(algo, t) {
+    t.test(algo, function (t) {
+      var nodeHash = crypto.createHmac(algo, buf).update(buf).digest();
+      new Hmac(algo, buf, nodeHash).update(buf).verify().then(function (ourHash) {
+        t.ok(ourHash, 'worked');
+        t.end();
+      }).catch(function (e) {
+        t.ok(false, e.stack);
+        t.end();
+      });
+    });
+  }
 });
 test('encrypt/decrypt', function (t) {
   var key = new Buffer(16);
@@ -162,10 +187,10 @@ test('rsa', function (t) {
   var nodePub = jwk2pem(pub);
   var data = new Buffer('fooooooo');
   var nodeSig = crypto.createSign('RSA-SHA256').update(data).sign(nodePriv);
-  new Signature(priv).update(data).sign().then(function (sig) {
+  new Signature(priv, 'sha256').update(data).sign().then(function (sig) {
     t.ok(crypto.createVerify('RSA-SHA256').update(data).verify(nodePub, sig), 'node verify');
     t.equals(nodeSig.toString('hex'), sig.toString('hex'));
-    return new Signature(pub, nodeSig).update(data).verify();
+    return new Signature(pub, 'sha256', nodeSig).update(data).verify();
   }).then(function (res) {
     t.ok(res, 'we verify');
     t.end();
@@ -173,4 +198,87 @@ test('rsa', function (t) {
     t.error(e);
     t.end();
   });
-})
+});
+test('ecdsa p256', function (t) {
+  var priv = {"crv":"P-256","d":"EbZoCsc-k8QhV4s6YjomZyB1qtgdA6dnOjKqOqx8OEE","ext":true,"key_ops":["sign"],"kty":"EC","x":"1lw1cUhf1bDx7Ij_WpRU7ZvrhZJMJOFxn0xc5JJDrEg","y":"HtJQX9tK8gllFtZjf-z7HRzLhosF9bgGS77L5pAcCsM"};
+  var pub = {"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","x":"1lw1cUhf1bDx7Ij_WpRU7ZvrhZJMJOFxn0xc5JJDrEg","y":"HtJQX9tK8gllFtZjf-z7HRzLhosF9bgGS77L5pAcCsM"};
+  var nodePriv = jwk2pem(priv, {
+    private: true
+  });
+  var nodePub = jwk2pem(pub);
+  var data = new Buffer('fooooooo');
+  var nodeSig = crypto.createSign('ecdsa-with-SHA1').update(data).sign(nodePriv);
+  new Signature(priv, 'sha1').update(data).sign().then(function (sig) {
+    t.ok(crypto.createVerify('ecdsa-with-SHA1').update(data).verify(nodePub, toDER(sig)), 'node verify');
+    return new Signature(pub, 'sha1', fromDer(nodeSig)).update(data).verify();
+  }).then(function (res) {
+    t.ok(res, 'we verify');
+    t.end();
+  }).catch(function (e) {
+    t.error(e);
+    t.end();
+  });
+});
+// test('ecdsa p384', function (t) {
+//   var priv = {"crv":"P-384","d":"Il-D741GZgCA5CRRzC5XIJh5zLB9ofnlX0GqB4Vrnp1eHJOhWxRuyimAr6HD-oyd","ext":true,"key_ops":["sign"],"kty":"EC","x":"-sJ_JrOrbzO3k-qZSEwItkl8_Dxk9dQhFh-y4akAYZHMSb0AjGROcEUC9A6_7NOh","y":"Hnms0caSuoofsHI86V1yw2hBzSYWSpGAaRe1ZcCgsFryQLjZvnVoKOa4Cg1X4GhN"};
+//   var pub = {"crv":"P-384","ext":true,"key_ops":["verify"],"kty":"EC","x":"-sJ_JrOrbzO3k-qZSEwItkl8_Dxk9dQhFh-y4akAYZHMSb0AjGROcEUC9A6_7NOh","y":"Hnms0caSuoofsHI86V1yw2hBzSYWSpGAaRe1ZcCgsFryQLjZvnVoKOa4Cg1X4GhN"};
+//   var nodePriv = jwk2pem(priv, {
+//     private: true
+//   });
+//   var nodePub = jwk2pem(pub);
+//   var data = new Buffer('fooooooo');
+//   var nodeSig = crypto.createSign('ecdsa-with-SHA1').update(data).sign(nodePriv);
+//   new Signature(priv, 'sha1').update(data).sign().then(function (sig) {
+//     t.ok(crypto.createVerify('ecdsa-with-SHA1').update(data).verify(nodePub, toDER(sig)), 'node verify');
+//     return new Signature(pub, 'sha1', fromDer(nodeSig)).update(data).verify();
+//   }).then(function (res) {
+//     t.ok(res, 'we verify');
+//     t.end();
+//   }).catch(function (e) {
+//     t.error(e);
+//     t.end();
+//   });
+// });
+// test('ecdsa p521', function (t) {
+//   var priv = {"crv":"P-521","d":"Af8h6dGJGbIp4Nmet-ZpV1mDJB3l5hw58lBfSL9Q1yXwLlonOWrIwSZIy2Udm9I_Lx9zP4W7A-oHcQXAekKAhCUx","ext":true,"key_ops":["sign"],"kty":"EC","x":"ARL4r-1H5vUinQSFVsEEfBunX_gwuyJ-Xk_nCCiP4ZTf2iaaSwJXzbPCObgr44eFHzHhzY0sxdnl3UmpDmwj0W1U","y":"AJ2LoHDZSHNDz-1c8y1LeQbS8h20IzCL-8w-oxwUv2en-1JrvAwjdhfn4xBMSCbPm7V5UOx-4sG0EkCCo16DuAO8"}
+//   var pub = {"crv":"P-521","ext":true,"key_ops":["verify"],"kty":"EC","x":"ARL4r-1H5vUinQSFVsEEfBunX_gwuyJ-Xk_nCCiP4ZTf2iaaSwJXzbPCObgr44eFHzHhzY0sxdnl3UmpDmwj0W1U","y":"AJ2LoHDZSHNDz-1c8y1LeQbS8h20IzCL-8w-oxwUv2en-1JrvAwjdhfn4xBMSCbPm7V5UOx-4sG0EkCCo16DuAO8"};
+//   var nodePriv = jwk2pem(priv, {
+//     private: true
+//   });
+//   var nodePub = jwk2pem(pub);
+//   var data = new Buffer('fooooooo');
+//   var nodeSig = crypto.createSign('ecdsa-with-SHA1').update(data).sign(nodePriv);
+//   new Signature(priv, 'sha1').update(data).sign().then(function (sig) {
+//     t.ok(crypto.createVerify('ecdsa-with-SHA1').update(data).verify(nodePub, toDER(sig)), 'node verify');
+//     return new Signature(pub, 'sha1', fromDer(nodeSig)).update(data).verify();
+//   }).then(function (res) {
+//     t.ok(res, 'we verify');
+//     t.end();
+//   }).catch(function (e) {
+//     t.error(e);
+//     t.end();
+//   });
+// });
+
+function fromDer(input) {
+  var parsed = ecSig.decode(input, 'der');
+  return Buffer.concat([new Buffer(parsed.r.toArray()), new Buffer(parsed.s.toArray())]);
+}
+function toDER (input) {
+  var sliceLen = Math.floor(input.length / 2);
+  var r = input.slice(0, sliceLen);
+  var s = input.slice(sliceLen);
+
+  // Pad values
+  if (r[0] & 0x80) {
+    r = Buffer.concat([new Buffer([0]), r]);
+  }
+  // Pad values
+  if (s[0] & 0x80) {
+    s = Buffer.concat([new Buffer([0]), s]);
+  }
+
+  var total = r.length + s.length + 4
+  var res = [ 0x30, total, 0x02, r.length ]
+  return Buffer.concat([new Buffer([ 0x30, total, 0x02, r.length ]), r, new Buffer([ 0x02, s.length ]), s]);
+}
