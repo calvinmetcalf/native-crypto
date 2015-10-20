@@ -79,10 +79,24 @@ class ECDH {
         this.hasNative = true;
         let makeKeys;
         if (priv) {
-          makeKeys = global.crypto.subtle.importKey(jwk, priv, {
+          let pub = {};
+          Object.keys(priv).forEach(key => {
+            if (key !== 'd') {
+              pub[key] = priv[key];
+            }
+          });
+          makeKeys = Promise.all([global.crypto.subtle.importKey('jwk', priv, {
            name: 'ecdh',
            namedCurve: this.curve
-         }, true, ['deriveBits']);
+         }, true, ['deriveBits']), global.crypto.subtle.importKey('jwk', pub, {
+          name: 'ecdh',
+          namedCurve: this.curve
+        }, true, [])]).then(resp => {
+          return {
+            privateKey: resp[0],
+            publicKey: resp[1]
+          };
+        });
         } else {
           makeKeys = global.crypto.subtle.generateKey({
             name: 'ecdh',
@@ -127,7 +141,9 @@ class ECDH {
     });
   }
   computeSecret(publicKey) {
-    return this.check.then(()=>{
+    return this.check.then(()=>
+      Promise.resolve(publicKey)
+    ).then(publicKey => {
       let pair = this._map.get(KEYS);
       if (this.hasNative) {
         return global.crypto.subtle.importKey('jwk', publicKey, {

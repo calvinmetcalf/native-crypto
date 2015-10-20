@@ -44,3 +44,21 @@ nCrypto.encrypt(key, iv, plainText).then(function (cipherText) {
   // res and plainText should be the same
 });
 ```
+
+ECDH
+===
+
+Both public and private keys are in JWK format.
+
+```js
+var keyPair1 = new nCrypto.ECDH(curveName);
+var keyPair2 = new nCrypto.ECDH(curveName, privateKey);
+
+keyPair2.getPublic().then(pub => keyPair1.computeSecret(pub)).then(res => {
+  // shared secrete
+});
+
+keyPair1.getPrivate().then(priv=>{
+  // exported private key
+})
+```
