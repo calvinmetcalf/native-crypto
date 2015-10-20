@@ -29,7 +29,10 @@ var toBrowser = {
   'secp384r1': 'P-384',
   'p-384': 'P-384',
   'secp521r1': 'P-521',
-  'p-521': 'P-521'
+  'p-521': 'P-521',
+  'rs256': 'SHA-256',
+  'rs384': 'SHA-384',
+  'rs512': 'SHA-512'
 };
 function normalize(name, node) {
   var out;
