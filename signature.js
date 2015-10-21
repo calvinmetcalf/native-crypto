@@ -15,6 +15,9 @@ const ecSig = asn1.define('signature', function () {
   this.seq().obj(this.key('r').int(), this.key('s').int());
 });
 function toDER (input) {
+  if (input.length % 2) {
+    input = Buffer.concat([new Buffer([0]), input]);
+  }
   var sliceLen = Math.floor(input.length / 2);
   var r = input.slice(0, sliceLen);
   var s = input.slice(sliceLen);
@@ -90,14 +93,29 @@ function checkNative(type, algo, curve) {
 }
 
 class Signature {
-  constructor(key, algo, otherKey){
-    this.algo = normalize(algo);
+  constructor(key, otherKey){
     if (key.kty.toLowerCase() === 'rsa') {
       this.type = 'RSASSA-PKCS1-v1_5';
       this.curve = null;
     } else if (key.kty.toLowerCase() === 'ec') {
       this.type = 'ECDSA';
       this.curve = normalize(key.crv);
+    }
+    if (this.curve) {
+      // switch (this.curve) {
+      //   case 'P-256':
+      //     this.algo = 'SHA-256';
+      //     break;
+      //   case 'P-384':
+      //     this.algo = 'SHA-384';
+      //     break;
+      //   case 'P-512':
+      //     this.algo = 'SHA-512';
+      //     break;
+      // }
+      this.algo = 'SHA-1';
+    } else {
+      this.algo = normalize(key.alg);
     }
     this._key = new WeakMap();
     this._key.set(KEY, key);
