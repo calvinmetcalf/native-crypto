@@ -9,36 +9,10 @@ const jwk2pem = require('jwk-to-pem');
 const SIGN = Symbol('sign');
 const VERIFY = Symbol('verify');
 const KEY = {};
-const asn1 = require('asn1.js');
 
-const ecSig = asn1.define('signature', function () {
-  this.seq().obj(this.key('r').int(), this.key('s').int());
-});
-function toDER (input) {
-  if (input.length % 2) {
-    input = Buffer.concat([new Buffer([0]), input]);
-  }
-  var sliceLen = Math.floor(input.length / 2);
-  var r = input.slice(0, sliceLen);
-  var s = input.slice(sliceLen);
-
-  // Pad values
-  if (r[0] & 0x80) {
-    r = Buffer.concat([new Buffer([0]), r]);
-  }
-  // Pad values
-  if (s[0] & 0x80) {
-    s = Buffer.concat([new Buffer([0]), s]);
-  }
-
-  var total = r.length + s.length + 4
-  var res = [ 0x30, total, 0x02, r.length ]
-  return Buffer.concat([new Buffer([ 0x30, total, 0x02, r.length ]), r, new Buffer([ 0x02, s.length ]), s]);
-}
-function fromDer(input) {
-  var parsed = ecSig.decode(input, 'der');
-  return Buffer.concat([new Buffer(parsed.r.toArray()), new Buffer(parsed.s.toArray())]);
-}
+var der = require('./der');
+var fromDer = der.fromDer;
+var toDER = der.toDER;
 function checkNative(type, algo, curve) {
   algo = normalize(algo);
   if (curve) {
@@ -91,7 +65,11 @@ function checkNative(type, algo, curve) {
     return prom;
   }
 }
-
+var lens = {
+  'P-256': 32,
+  'P-384': 48,
+  'P-521': 66
+};
 class Signature {
   constructor(key, otherKey){
     if (key.kty.toLowerCase() === 'rsa') {
@@ -180,7 +158,7 @@ class Signature {
         if (sym === SIGN) {
           let out = this.nodeCrypto.sign(jwk2pem(key, {private: true}));
           if (this.curve) {
-            return fromDer(out);
+            return fromDer(out, lens[this.curve]);
           }
           return out;
         } else if (sym === VERIFY) {
