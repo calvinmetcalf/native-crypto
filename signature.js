@@ -80,6 +80,7 @@ class Signature {
       this.curve = normalize(key.crv);
     }
     if (this.curve) {
+      throw new Error('ECDSA not supported...yet');
       // switch (this.curve) {
       //   case 'P-256':
       //     this.algo = 'SHA-256';
@@ -91,7 +92,6 @@ class Signature {
       //     this.algo = 'SHA-512';
       //     break;
       // }
-      this.algo = 'SHA-1';
     } else {
       this.algo = normalize(key.alg);
     }

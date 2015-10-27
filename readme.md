@@ -45,20 +45,18 @@ nCrypto.encrypt(key, iv, plainText).then(function (cipherText) {
 });
 ```
 
-ECDH
-===
+Signatures
 
-Both public and private keys are in JWK format.
+Only JWK are supported and RSA keys (no DSA or ECDSA yet).
 
 ```js
-var keyPair1 = new nCrypto.ECDH(curveName);
-var keyPair2 = new nCrypto.ECDH(curveName, privateKey);
-
-keyPair2.getPublic().then(pub => keyPair1.computeSecret(pub)).then(res => {
-  // shared secrete
+var sign = new nCrypto.Signature(privateKey);
+sign.update(buffer).update(otherBuffer);
+sign.sign().then(function (yourSig) {});
+// or
+var verify = new nCrypto.Signature(privateKey, sigToVerify);
+verify.update(buffer).verify(otherBuffer);
+verify.verify().then(function (result) {
+  // result is a boolean
 });
-
-keyPair1.getPrivate().then(priv=>{
-  // exported private key
-})
 ```
