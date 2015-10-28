@@ -1,7 +1,12 @@
 'use strict';
+var raw;
 if (process.browser) {
   window.myDebug = require('debug');
   window.myDebug.enable('native-crypto:*');
+} else {
+  try {
+    raw = require('raw-ecdsa');
+  } catch(e){}
 }
 var jwk = require('./jwk');
 var crypto = require('crypto');
@@ -205,16 +210,20 @@ function runedsa(i) {
     t.test('ecdsa p256', function (t) {
       var priv = {"crv":"P-256","d":"EbZoCsc-k8QhV4s6YjomZyB1qtgdA6dnOjKqOqx8OEE","ext":true,"key_ops":["sign"],"kty":"EC","x":"1lw1cUhf1bDx7Ij_WpRU7ZvrhZJMJOFxn0xc5JJDrEg","y":"HtJQX9tK8gllFtZjf-z7HRzLhosF9bgGS77L5pAcCsM"};
       var pub = {"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","x":"1lw1cUhf1bDx7Ij_WpRU7ZvrhZJMJOFxn0xc5JJDrEg","y":"HtJQX9tK8gllFtZjf-z7HRzLhosF9bgGS77L5pAcCsM"};
-      var nodePriv = jwk2pem(priv, {
+      var nodePriv = new Buffer(jwk2pem(priv, {
         private: true
-      });
-      var nodePub = jwk2pem(pub);
+      }));
+      console.log(jwk2pem(pub));
+      var nodePub = new Buffer(jwk2pem(pub));
       var data = new Buffer('fooooooo');
-      var nodeSig = crypto.createSign('ecdsa-with-SHA1').update(data).sign(nodePriv);
+      var npriv = new raw.Key(nodePriv);
+      var nodeSig = npriv.sign(crypto.createHash('sha256').update(data).digest());
       var roundtrip = toDER(fromDer(nodeSig, 32));
       t.equals(roundtrip.toString('hex'), nodeSig.toString('hex'), 'round trips');
       new Signature(priv).update(data).sign().then(function (sig) {
-        t.ok(crypto.createVerify('ecdsa-with-SHA1').update(data).verify(nodePub, toDER(sig)), 'node verify');
+        var npub = new raw.Key(nodePub);
+        var h = crypto.createHash('sha256').update(data).digest();
+        t.ok(npub.verify(toDER(sig), h), 'node verify');
         return new Signature(pub, fromDer(nodeSig, 32)).update(data).verify();
       }).then(function (res) {
         t.ok(res, 'we verify');
@@ -224,28 +233,28 @@ function runedsa(i) {
         t.end();
       });
     });
-    t.test('ecdsa p384', function (t) {
-      var priv = {"crv":"P-384","d":"Il-D741GZgCA5CRRzC5XIJh5zLB9ofnlX0GqB4Vrnp1eHJOhWxRuyimAr6HD-oyd","ext":true,"key_ops":["sign"],"kty":"EC","x":"-sJ_JrOrbzO3k-qZSEwItkl8_Dxk9dQhFh-y4akAYZHMSb0AjGROcEUC9A6_7NOh","y":"Hnms0caSuoofsHI86V1yw2hBzSYWSpGAaRe1ZcCgsFryQLjZvnVoKOa4Cg1X4GhN"};
-      var pub = {"crv":"P-384","ext":true,"key_ops":["verify"],"kty":"EC","x":"-sJ_JrOrbzO3k-qZSEwItkl8_Dxk9dQhFh-y4akAYZHMSb0AjGROcEUC9A6_7NOh","y":"Hnms0caSuoofsHI86V1yw2hBzSYWSpGAaRe1ZcCgsFryQLjZvnVoKOa4Cg1X4GhN"};
-      var nodePriv = jwk2pem(priv, {
-        private: true
-      });
-      var nodePub = jwk2pem(pub);
-      var data = new Buffer('fooooooo');
-      var nodeSig = crypto.createSign('ecdsa-with-SHA1').update(data).sign(nodePriv);
-      var roundtrip = toDER(fromDer(nodeSig, 48));
-      t.equals(roundtrip.toString('hex'), nodeSig.toString('hex'), 'round trips');
-      new Signature(priv).update(data).sign().then(function (sig) {
-        t.ok(crypto.createVerify('ecdsa-with-SHA1').update(data).verify(nodePub, toDER(sig)), 'node verify');
-        return new Signature(pub, fromDer(nodeSig, 48)).update(data).verify();
-      }).then(function (res) {
-        t.ok(res, 'we verify');
-        t.end();
-      }).catch(function (e) {
-        t.error(e);
-        t.end();
-      });
-    });
+    // t.test('ecdsa p384', function (t) {
+    //   var priv = {"crv":"P-384","d":"Il-D741GZgCA5CRRzC5XIJh5zLB9ofnlX0GqB4Vrnp1eHJOhWxRuyimAr6HD-oyd","ext":true,"key_ops":["sign"],"kty":"EC","x":"-sJ_JrOrbzO3k-qZSEwItkl8_Dxk9dQhFh-y4akAYZHMSb0AjGROcEUC9A6_7NOh","y":"Hnms0caSuoofsHI86V1yw2hBzSYWSpGAaRe1ZcCgsFryQLjZvnVoKOa4Cg1X4GhN"};
+    //   var pub = {"crv":"P-384","ext":true,"key_ops":["verify"],"kty":"EC","x":"-sJ_JrOrbzO3k-qZSEwItkl8_Dxk9dQhFh-y4akAYZHMSb0AjGROcEUC9A6_7NOh","y":"Hnms0caSuoofsHI86V1yw2hBzSYWSpGAaRe1ZcCgsFryQLjZvnVoKOa4Cg1X4GhN"};
+    //   var nodePriv = jwk2pem(priv, {
+    //     private: true
+    //   });
+    //   var nodePub = jwk2pem(pub);
+    //   var data = new Buffer('fooooooo');
+    //   var nodeSig = crypto.createSign('ecdsa-with-SHA1').update(data).sign(nodePriv);
+    //   var roundtrip = toDER(fromDer(nodeSig, 48));
+    //   t.equals(roundtrip.toString('hex'), nodeSig.toString('hex'), 'round trips');
+    //   new Signature(priv).update(data).sign().then(function (sig) {
+    //     t.ok(crypto.createVerify('ecdsa-with-SHA1').update(data).verify(nodePub, toDER(sig)), 'node verify');
+    //     return new Signature(pub, fromDer(nodeSig, 48)).update(data).verify();
+    //   }).then(function (res) {
+    //     t.ok(res, 'we verify');
+    //     t.end();
+    //   }).catch(function (e) {
+    //     t.error(e);
+    //     t.end();
+    //   });
+    // });
     t.test('der', function (t) {
       var ders = [
         '308188024201715200ebada87d5e4e1b19b60b7ac8338f9e056289e19316bbf6accbb48375c6f5281db504ae35f56075d64ffe6186e8cb9ddff5aa5852ffd535589809c3024474024200a1b51d481385cdf6f047b79e8769ba31a3b50d1e072e3d75f2369ded67c41e0fe18a587acd5a5ce54ef1f7af79ba3664f0c31b7f117a75743f7bf0d6f3183e74e2',
@@ -257,33 +266,33 @@ function runedsa(i) {
       });
       t.end();
     });
-    t.test('ecdsa p521', function (t) {
-      var priv = {"crv":"P-521","d":"Af8h6dGJGbIp4Nmet-ZpV1mDJB3l5hw58lBfSL9Q1yXwLlonOWrIwSZIy2Udm9I_Lx9zP4W7A-oHcQXAekKAhCUx","ext":true,"key_ops":["sign"],"kty":"EC","x":"ARL4r-1H5vUinQSFVsEEfBunX_gwuyJ-Xk_nCCiP4ZTf2iaaSwJXzbPCObgr44eFHzHhzY0sxdnl3UmpDmwj0W1U","y":"AJ2LoHDZSHNDz-1c8y1LeQbS8h20IzCL-8w-oxwUv2en-1JrvAwjdhfn4xBMSCbPm7V5UOx-4sG0EkCCo16DuAO8"}
-      var pub = {"crv":"P-521","ext":true,"key_ops":["verify"],"kty":"EC","x":"ARL4r-1H5vUinQSFVsEEfBunX_gwuyJ-Xk_nCCiP4ZTf2iaaSwJXzbPCObgr44eFHzHhzY0sxdnl3UmpDmwj0W1U","y":"AJ2LoHDZSHNDz-1c8y1LeQbS8h20IzCL-8w-oxwUv2en-1JrvAwjdhfn4xBMSCbPm7V5UOx-4sG0EkCCo16DuAO8"};
-      var nodePriv = jwk2pem(priv, {
-        private: true
-      });
-      var nodePub = jwk2pem(pub);
-      var data = new Buffer('fooooooo');
-      var nodeSig = crypto.createSign('ecdsa-with-SHA1').update(data).sign(nodePriv);
-      var roundtrip = toDER(fromDer(nodeSig, 66));
-      t.equals(roundtrip.toString('hex'), nodeSig.toString('hex'), 'round trips');
-      new Signature(priv).update(data).sign().then(function (sig) {
-        var ourDER = toDER(sig);
-        t.ok(crypto.createVerify('ecdsa-with-SHA1').update(data).verify(nodePub, ourDER), 'node verify');
-        return new Signature(pub, fromDer(nodeSig, 66)).update(data).verify();
-      }).then(function (res) {
-        t.ok(res, 'we verify');
-        t.end();
-      }).catch(function (e) {
-        t.error(e);
-        t.end();
-      });
-    });
+    // t.test('ecdsa p521', function (t) {
+    //   var priv = {"crv":"P-521","d":"Af8h6dGJGbIp4Nmet-ZpV1mDJB3l5hw58lBfSL9Q1yXwLlonOWrIwSZIy2Udm9I_Lx9zP4W7A-oHcQXAekKAhCUx","ext":true,"key_ops":["sign"],"kty":"EC","x":"ARL4r-1H5vUinQSFVsEEfBunX_gwuyJ-Xk_nCCiP4ZTf2iaaSwJXzbPCObgr44eFHzHhzY0sxdnl3UmpDmwj0W1U","y":"AJ2LoHDZSHNDz-1c8y1LeQbS8h20IzCL-8w-oxwUv2en-1JrvAwjdhfn4xBMSCbPm7V5UOx-4sG0EkCCo16DuAO8"}
+    //   var pub = {"crv":"P-521","ext":true,"key_ops":["verify"],"kty":"EC","x":"ARL4r-1H5vUinQSFVsEEfBunX_gwuyJ-Xk_nCCiP4ZTf2iaaSwJXzbPCObgr44eFHzHhzY0sxdnl3UmpDmwj0W1U","y":"AJ2LoHDZSHNDz-1c8y1LeQbS8h20IzCL-8w-oxwUv2en-1JrvAwjdhfn4xBMSCbPm7V5UOx-4sG0EkCCo16DuAO8"};
+    //   var nodePriv = jwk2pem(priv, {
+    //     private: true
+    //   });
+    //   var nodePub = jwk2pem(pub);
+    //   var data = new Buffer('fooooooo');
+    //   var nodeSig = crypto.createSign('ecdsa-with-SHA1').update(data).sign(nodePriv);
+    //   var roundtrip = toDER(fromDer(nodeSig, 66));
+    //   t.equals(roundtrip.toString('hex'), nodeSig.toString('hex'), 'round trips');
+    //   new Signature(priv).update(data).sign().then(function (sig) {
+    //     var ourDER = toDER(sig);
+    //     t.ok(crypto.createVerify('ecdsa-with-SHA1').update(data).verify(nodePub, ourDER), 'node verify');
+    //     return new Signature(pub, fromDer(nodeSig, 66)).update(data).verify();
+    //   }).then(function (res) {
+    //     t.ok(res, 'we verify');
+    //     t.end();
+    //   }).catch(function (e) {
+    //     t.error(e);
+    //     t.end();
+    //   });
+    // });
   });
 }
-// var len = 5;
-// var i = 0;
-// while (++i < len) {
-//   runedsa(i);
-// }
+var len = 5;
+var i = 0;
+while (++i < len) {
+  runedsa(i);
+}

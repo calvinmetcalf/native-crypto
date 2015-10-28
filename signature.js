@@ -1,4 +1,5 @@
 'use strict';
+const createHash = require('create-hash');
 const sign = require('browserify-sign');
 const debug = require('debug')('native-crypto:signature');
 const checked = new Map();
@@ -8,8 +9,17 @@ ZERO_BUF.fill(0);
 const jwk2pem = require('jwk-to-pem');
 const SIGN = Symbol('sign');
 const VERIFY = Symbol('verify');
+const base64url = require('./base64url');
 const KEY = {};
-
+const raw = (function () {
+  try {
+    return require('raw-ecdsa');
+  } catch (e) {
+    return null;
+  }
+}());
+const elliptic = require('elliptic');
+const EC = elliptic.ec
 var der = require('./der');
 var fromDer = der.fromDer;
 var toDER = der.toDER;
@@ -70,30 +80,36 @@ var lens = {
   'P-384': 48,
   'P-521': 66
 };
+var ecNames = {
+  'P-256': 'p256',
+  'P-384': 'p384',
+  'P-521': 'p521'
+}
 class Signature {
   constructor(key, otherKey){
-    if (key.kty.toLowerCase() === 'rsa') {
+    if (key.kty && key.kty.toLowerCase() === 'rsa') {
       this.type = 'RSASSA-PKCS1-v1_5';
       this.curve = null;
-    } else if (key.kty.toLowerCase() === 'ec') {
+    } else if (key.kty && key.kty.toLowerCase() === 'ec') {
       this.type = 'ECDSA';
       this.curve = normalize(key.crv);
     }
     if (this.curve) {
-      throw new Error('ECDSA not supported...yet');
-      // switch (this.curve) {
-      //   case 'P-256':
-      //     this.algo = 'SHA-256';
-      //     break;
-      //   case 'P-384':
-      //     this.algo = 'SHA-384';
-      //     break;
-      //   case 'P-512':
-      //     this.algo = 'SHA-512';
-      //     break;
-      // }
-    } else {
+      switch (this.curve) {
+        case 'P-256':
+          this.algo = 'SHA-256';
+          break;
+        case 'P-384':
+          this.algo = 'SHA-384';
+          break;
+        case 'P-512':
+          this.algo = 'SHA-512';
+          break;
+      }
+    } else if (key.alg){
       this.algo = normalize(key.alg);
+    } else {
+      throw new Error('invalid key');
     }
     this._key = new WeakMap();
     this._key.set(KEY, key);
@@ -112,10 +128,13 @@ class Signature {
         this.hasNative = true;
       } else {
         this.hasNative = false;
-        if (this.other) {
-          this.nodeCrypto = sign.createVerify((this.curve ? 'ecdsa-with-' : 'RSA-') + normalize(this.algo, true));
+        let algo = normalize(this.algo, true);
+        if (this.curve) {
+          this.nodeCrypto = createHash(algo);
+        } else if (this.other) {
+          this.nodeCrypto = sign.createVerify(algo);
         } else {
-          this.nodeCrypto = sign.createSign((this.curve ? 'ecdsa-with-' : 'RSA-') + normalize(this.algo, true));
+          this.nodeCrypto = sign.createSign(algo);
         }
         if (this._cache && this._cache.length) {
           this._cache.forEach(thing => {
@@ -156,13 +175,43 @@ class Signature {
       let key = this._key.get(KEY);
       if (this.nodeCrypto) {
         if (sym === SIGN) {
-          let out = this.nodeCrypto.sign(jwk2pem(key, {private: true}));
-          if (this.curve) {
-            return fromDer(out, lens[this.curve]);
+          if (!this.curve) {
+            return this.nodeCrypto.sign(jwk2pem(key, {private: true}));
           }
-          return out;
+          let hash = this.nodeCrypto.digest();
+          if (raw) {
+            let signKey = new raw.Key(new Buffer(jwk2pem(key, {private: true})));
+            return fromDer(signKey.sign(hash), lens[this.curve]);
+          }
+          let ec = new EC(ecNames[this.curve]);
+          let keyPair = ec.keyFromPrivate(base64url.decode(key.d));
+          let sig = keyPair.sign(hash);
+          let r = new Buffer(sig.r.toArray());
+          let s = new Buffer(sig.s.toArray());
+          let len = lens[this.curve];
+          while (r.length < len) {
+            r = Buffer.concat([new Buffer([0]), r]);
+          }
+          while (s.length < len) {
+            s = Buffer.concat([new Buffer([0]), s]);
+          }
+          return Buffer.concat([r, s]);
         } else if (sym === VERIFY) {
-          return this.nodeCrypto.verify(jwk2pem(key), this.curve ? toDER(this.other) : this.other);
+          if (!this.curve) {
+            return this.nodeCrypto.verify(jwk2pem(key), this.other);
+          }
+          let other = toDER(this.other);
+
+          let hash = this.nodeCrypto.digest();
+          if (raw) {
+            let ver = new raw.Key(new Buffer(jwk2pem(key)));
+            return ver.verify(other, hash);
+          }
+          let ec = new EC(ecNames[this.curve]);
+          return ec.verify(hash, other, {
+            x: base64url.decode(key.x).toString('hex'),
+            y: base64url.decode(key.y).toString('hex')
+          });
         }
       }
       var data;
