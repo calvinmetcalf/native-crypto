@@ -41,5 +41,8 @@
   },
   "optionalDependencies": {
     "raw-ecdsa": "^1.0.0"
+  },
+  "browser": {
+    "raw-ecdsa": false
   }
 }

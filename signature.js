@@ -19,7 +19,7 @@ const raw = (function () {
   }
 }());
 const elliptic = require('elliptic');
-const EC = elliptic.ec
+const EC = elliptic.ec;
 var der = require('./der');
 var fromDer = der.fromDer;
 var toDER = der.toDER;
@@ -84,7 +84,7 @@ var ecNames = {
   'P-256': 'p256',
   'P-384': 'p384',
   'P-521': 'p521'
-}
+};
 class Signature {
   constructor(key, otherKey){
     if (key.kty && key.kty.toLowerCase() === 'rsa') {
@@ -102,7 +102,7 @@ class Signature {
         case 'P-384':
           this.algo = 'SHA-384';
           break;
-        case 'P-512':
+        case 'P-521':
           this.algo = 'SHA-512';
           break;
       }
@@ -189,11 +189,15 @@ class Signature {
           let r = new Buffer(sig.r.toArray());
           let s = new Buffer(sig.s.toArray());
           let len = lens[this.curve];
-          while (r.length < len) {
-            r = Buffer.concat([new Buffer([0]), r]);
+          if (r.length < len) {
+            let buf = new Buffer(len - r.length);
+            buf.fill(0);
+            r = Buffer.concat([buf, r]);
           }
-          while (s.length < len) {
-            s = Buffer.concat([new Buffer([0]), s]);
+          if (s.length < len) {
+            let buf = new Buffer(len - s.length);
+            buf.fill(0);
+            s = Buffer.concat([buf, s]);
           }
           return Buffer.concat([r, s]);
         } else if (sym === VERIFY) {

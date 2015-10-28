@@ -13,7 +13,6 @@ function toDER (input) {
   var s = input.slice(sliceLen);
 
   // Pad values
-
   if (r[0] & 0x80) {
     r = Buffer.concat([new Buffer([0]), r]);
   }
@@ -21,12 +20,9 @@ function toDER (input) {
   if (s[0] & 0x80) {
     s = Buffer.concat([new Buffer([0]), s]);
   }
-  if (!r[0] && !(r[1] & 0x80)) {
-    r = r.slice(1);
-  }
-  if (!s[0] && !(s[1] & 0x80)) {
-    s = s.slice(1);
-  }
+  r = rmPadding(r);
+  s = rmPadding(s);
+
   var rarr = [0x02];
   constructLength(rarr, r.length);
   var sarr = [0x02];
@@ -41,17 +37,29 @@ function constructLength(arr, len) {
     arr.push(len);
     return;
   }
-  var octets = 1 + (Math.log2(len) >> 3);
-  arr.push(octets ^ 0x80);
-  while (true) {
-    if (octets === 1) {
+  var octets = 1 + (Math.log(len) / Math.LN2 >>> 3);
+  arr.push(octets | 0x80);
+  while (octets) {
+    if (octets-- === 1) {
       arr.push(len & 0xff);
       return;
     }
-    octets--;
-    arr.push(len >> (octets << 3));
+    arr.push((len >>> (octets << 3)) & 0xff);
   }
 }
+
+function rmPadding(buf) {
+  var i = 0;
+  var len = buf.length - 1;
+  while (!buf[i] && !(buf[i + 1] & 0x80) && i < len) {
+    i++;
+  }
+  if (i === 0) {
+    return buf;
+  }
+  return buf.slice(i);
+}
+
 function fromDer(input, len) {
   var p = {};
   p.place = 0;
@@ -71,11 +79,15 @@ function fromDer(input, len) {
   if (!s[0] && (s[1] & 0x80)) {
     s = s.slice(1);
   }
-  while (r.length < len) {
-    r = Buffer.concat([new Buffer([0]), r]);
+  if (r.length < len) {
+    let dif = new Buffer(len - r.length);
+    dif.fill(0);
+    r = Buffer.concat([dif, r]);
   }
-  while (s.length < len) {
-    s = Buffer.concat([new Buffer([0]), s]);
+  if (s.length < len) {
+    let dif = new Buffer(len - s.length);
+    dif.fill(0);
+    s = Buffer.concat([dif, s]);
   }
   return Buffer.concat([r, s]);
 }
