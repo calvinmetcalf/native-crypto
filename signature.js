@@ -102,7 +102,7 @@ class Signature {
         case 'P-384':
           this.algo = 'SHA-384';
           break;
-        case 'P-512':
+        case 'P-521':
           this.algo = 'SHA-512';
           break;
       }
