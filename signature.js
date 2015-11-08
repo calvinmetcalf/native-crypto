@@ -30,50 +30,49 @@ function checkNative(type, algo, curve) {
   }
   if (global.process && !global.process.browser) {
     return Promise.resolve(false);
-  } else {
-    if (!global.crypto
-       || !global.crypto.subtle
-       || !global.crypto.subtle.importKey
-       || !global.crypto.subtle.sign
-       || !global.crypto.subtle.verify
-    ) {
-      return Promise.resolve(false);
-    }
-    var id = `${algo}-${type}-${curve}`;
-    if (checked.has(id)) {
-      return checked.get(id);
-    }
-    let opts = {
-      name: type
-    };
-    if (curve) {
-      opts.namedCurve = curve;
-    } else {
-      opts.modulusLength = 1024;
-      opts.publicExponent = new Buffer([0x01, 0x00, 0x01]);
-      opts.hash = {name: algo};
-    }
-    let signOpts = {
-      name: type
-    };
-    if (curve) {
-      signOpts.hash = {name: algo};
-    }
-    let prom = global.crypto.subtle.generateKey(opts,
-      false,
-      ['sign']
-  ).then(key=>
-      global.crypto.subtle.sign(signOpts, key.privateKey, ZERO_BUF)
-    ).then(function () {
-        debug(`has working sublte crypto for type: ${type} with digest ${algo} ${curve ? `with curve: ${curve}` : ''}`);
-        return true;
-      }, function (e) {
-        debug(e.message);
-        return false;
-      });
-    checked.set(algo, prom);
-    return prom;
   }
+  if (!global.crypto
+     || !global.crypto.subtle
+     || !global.crypto.subtle.importKey
+     || !global.crypto.subtle.sign
+     || !global.crypto.subtle.verify
+  ) {
+    return Promise.resolve(false);
+  }
+  var id = `${algo}-${type}-${curve}`;
+  if (checked.has(id)) {
+    return checked.get(id);
+  }
+  let opts = {
+    name: type
+  };
+  if (curve) {
+    opts.namedCurve = curve;
+  } else {
+    opts.modulusLength = 1024;
+    opts.publicExponent = new Buffer([0x01, 0x00, 0x01]);
+    opts.hash = {name: algo};
+  }
+  let signOpts = {
+    name: type
+  };
+  if (curve) {
+    signOpts.hash = {name: algo};
+  }
+  let prom = global.crypto.subtle.generateKey(opts,
+    false,
+    ['sign']
+).then(key=>
+    global.crypto.subtle.sign(signOpts, key.privateKey, ZERO_BUF)
+  ).then(function () {
+      debug(`has working sublte crypto for type: ${type} with digest ${algo} ${curve ? `with curve: ${curve}` : ''}`);
+      return true;
+    }, function (e) {
+      debug(e.message);
+      return false;
+    });
+  checked.set(algo, prom);
+  return prom;
 }
 var lens = {
   'P-256': 32,
@@ -132,9 +131,11 @@ class Signature {
         if (this.curve) {
           this.nodeCrypto = createHash(algo);
         } else if (this.other) {
-          this.nodeCrypto = sign.createVerify(algo);
+          console.log('rsa-' + algo.toLowerCase());
+          this.nodeCrypto = sign.createVerify('RSA-' + algo);
         } else {
-          this.nodeCrypto = sign.createSign(algo);
+          console.log('rsa-' + algo.toLowerCase());
+          this.nodeCrypto = sign.createSign('RSA-' + algo);
         }
         if (this._cache && this._cache.length) {
           this._cache.forEach(thing => {
