@@ -46,6 +46,7 @@ nCrypto.encrypt(key, iv, plainText).then(function (cipherText) {
 ```
 
 Signatures
+===
 
 Only JWK are supported and both RSA or ECDSA keys are supported (DSA is not
 supported by web crypto).
@@ -59,5 +60,17 @@ var verify = new nCrypto.Signature(privateKey, sigToVerify);
 verify.update(buffer).verify(otherBuffer);
 verify.verify().then(function (result) {
   // result is a boolean
+});
+```
+
+PBKDF2
+===
+
+No parameters are optional, key and salt must be buffers, length is in bytes,
+algo may be any of the supported hash algorithms.
+
+```js
+nCrypto.pbkdf2(key, salt, iterations, length, algo).then(function (derivedKey) {
+  // you have it
 });
 ```

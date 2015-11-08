@@ -24,6 +24,9 @@ var der = require('./der');
 var fromDer = der.fromDer;
 var toDER = der.toDER;
 var EC = require('elliptic').ec;
+var pbkdf2Fixtures = require('./pbkdf2-fixtures.json');
+// from the node module pbkdf2
+var pbkdf2 = require('./pbkdf2');
 test('hash', function (t) {
   var buf = new Buffer(8);
   buf.fill(0);
@@ -285,3 +288,33 @@ var i = 0;
 while (++i < len) {
   runedsa(i);
 }
+test('pbkdf2', function (t) {
+  pbkdf2Fixtures.forEach(function (fixture, i) {
+    t.test('fixture: ' + i, function (t) {
+      var key, salt;
+      if (fixture.key) {
+        key = new Buffer(fixture.key, 'binary');
+      } else if (fixture.keyHex) {
+        key = new Buffer(fixture.keyHex, 'hex');
+      }
+      if (fixture.salt) {
+        salt = new Buffer(fixture.salt, 'binary');
+      } else if (fixture.saltHex) {
+        salt = new Buffer(fixture.saltHex, 'hex');
+      }
+      var length = fixture.dkLen;
+      var iterations = fixture.iterations;
+      Object.keys(fixture.results).forEach(function (algo) {
+        t.test(algo, function (t) {
+          t.plan(1);
+          var result = fixture.results[algo];
+          pbkdf2(key, salt, iterations, length, algo).then(function (res) {
+            t.equals(res.toString('hex'), result);
+          }, function (err) {
+            t.notOk(err || true);
+          });
+        });
+      });
+    });
+  });
+});
