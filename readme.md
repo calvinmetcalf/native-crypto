@@ -47,7 +47,8 @@ nCrypto.encrypt(key, iv, plainText).then(function (cipherText) {
 
 Signatures
 
-Only JWK are supported and RSA or ECDSA keys (no DSA yet).
+Only JWK are supported and both RSA or ECDSA keys are supported (DSA is not
+supported by web crypto).
 
 ```js
 var sign = new nCrypto.Signature(privateKey);
