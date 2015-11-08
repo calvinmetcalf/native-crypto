@@ -48,7 +48,8 @@ function checkNative(algo) {
           name: 'ecdh',
           namedCurve: algo,
           public: pub2
-        }, priv1, outLen)
+        }, priv1, outLen),
+        global.crypto.subtle.exportKey('jwk', priv1)
       ]).then(resp=>{
         if (new Buffer(resp[0]).toString('base64') === new Buffer(resp[1]).toString('base64')) {
           debug(`has working ecdh with curve ${algo}`);
