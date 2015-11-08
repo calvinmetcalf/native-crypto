@@ -16,56 +16,55 @@ function checkNative(algo) {
   algo = normalize(algo);
   if (!process.browser) {
     return Promise.resolve(false);
-  } else {
-    if (!global.crypto
-      || !global.crypto.subtle
-      || !global.crypto.subtle.generateKey
-      || !global.crypto.subtle.deriveBits) {
-      return Promise.resolve(false);
-    }
-    if (checked.has(algo)) {
-      return checked.get(algo);
-    }
-    let prom = Promise.all([global.crypto.subtle.generateKey({
-      name: 'ecdh',
-      namedCurve: algo
-    }, true, ['deriveBits']), global.crypto.subtle.generateKey({
-      name: 'ecdh',
-      namedCurve: algo
-    }, true, ['deriveBits'])]).then(resp=>{
-      let pub1 = resp[0].publicKey;
-      let pub2 = resp[1].publicKey;
-      let priv1 = resp[0].privateKey;
-      let priv2 = resp[1].privateKey;
-      let outLen = secLens.get(algo);
-      return Promise.all([
-        global.crypto.subtle.deriveBits({
-          name: 'ecdh',
-          namedCurve: algo,
-          public: pub1
-        }, priv2, outLen),
-        global.crypto.subtle.deriveBits({
-          name: 'ecdh',
-          namedCurve: algo,
-          public: pub2
-        }, priv1, outLen),
-        global.crypto.subtle.exportKey('jwk', priv1)
-      ]).then(resp=>{
-        if (new Buffer(resp[0]).toString('base64') === new Buffer(resp[1]).toString('base64')) {
-          debug(`has working ecdh with curve ${algo}`);
-          return true;
-        } else {
-          debug(`results did not match for curve ${algo}`);
-          return false;
-        }
-      }).catch(e=>{
-        debug(`non working subtle crypto for curve ${algo} due to error ${e}`);
-        return false;
-      });
-    });
-    checked.set(algo, prom);
-    return prom;
   }
+  if (!global.crypto
+    || !global.crypto.subtle
+    || !global.crypto.subtle.generateKey
+    || !global.crypto.subtle.deriveBits) {
+    return Promise.resolve(false);
+  }
+  if (checked.has(algo)) {
+    return checked.get(algo);
+  }
+  let prom = Promise.all([global.crypto.subtle.generateKey({
+    name: 'ecdh',
+    namedCurve: algo
+  }, true, ['deriveBits']), global.crypto.subtle.generateKey({
+    name: 'ecdh',
+    namedCurve: algo
+  }, true, ['deriveBits'])]).then(resp=>{
+    let pub1 = resp[0].publicKey;
+    let pub2 = resp[1].publicKey;
+    let priv1 = resp[0].privateKey;
+    let priv2 = resp[1].privateKey;
+    let outLen = secLens.get(algo);
+    return Promise.all([
+      global.crypto.subtle.deriveBits({
+        name: 'ecdh',
+        namedCurve: algo,
+        public: pub1
+      }, priv2, outLen),
+      global.crypto.subtle.deriveBits({
+        name: 'ecdh',
+        namedCurve: algo,
+        public: pub2
+      }, priv1, outLen),
+      global.crypto.subtle.exportKey('jwk', priv1)
+    ]).then(resp=>{
+      if (new Buffer(resp[0]).toString('base64') === new Buffer(resp[1]).toString('base64')) {
+        debug(`has working ecdh with curve ${algo}`);
+        return true;
+      } else {
+        debug(`results did not match for curve ${algo}`);
+        return false;
+      }
+    }).catch(e=>{
+      debug(`non working subtle crypto for curve ${algo} due to error ${e}`);
+      return false;
+    });
+  });
+  checked.set(algo, prom);
+  return prom;
 }
 
 class ECDH {

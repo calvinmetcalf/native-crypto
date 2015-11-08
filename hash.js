@@ -9,23 +9,22 @@ function checkNative(algo) {
   algo = normalize(algo);
   if (!process.browser) {
     return Promise.resolve(false);
-  } else {
-    if (!global.crypto || !global.crypto.subtle || !global.crypto.subtle.digest) {
-      return Promise.resolve(false);
-    }
-    if (checked.has(algo)) {
-      return checked.get(algo);
-    }
-    let prom = global.crypto.subtle.digest(algo, ZERO_BUF)
-      .then(function () {
-        debug('has working subtle crypto for ' + algo);
-        return true;
-      }, function () {
-        return false;
-      });
-    checked.set(algo, prom);
-    return prom;
   }
+  if (!global.crypto || !global.crypto.subtle || !global.crypto.subtle.digest) {
+    return Promise.resolve(false);
+  }
+  if (checked.has(algo)) {
+    return checked.get(algo);
+  }
+  let prom = global.crypto.subtle.digest(algo, ZERO_BUF)
+    .then(function () {
+      debug('has working subtle crypto for ' + algo);
+      return true;
+    }, function () {
+      return false;
+    });
+  checked.set(algo, prom);
+  return prom;
 }
 
 class Hash {

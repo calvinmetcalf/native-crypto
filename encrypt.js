@@ -11,7 +11,7 @@ function checkNative() {
 
   if (global.process && !global.process.browser) {
     return Promise.resolve(false);
-  } else {
+  }
     if (!global.crypto
        || !global.crypto.subtle
        || !global.crypto.subtle.importKey
@@ -42,7 +42,6 @@ function checkNative() {
       return false;
     });
     return check;
-  }
 }
 module.exports = encrypt;
 function encrypt(key, iv, plainText, aad) {

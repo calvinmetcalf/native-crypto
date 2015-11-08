@@ -14,33 +14,32 @@ function checkNative(algo) {
   algo = normalize(algo);
   if (global.process && !global.process.browser) {
     return Promise.resolve(false);
-  } else {
-    if (!global.crypto
-       || !global.crypto.subtle
-       || !global.crypto.subtle.importKey
-       || !global.crypto.subtle.sign
-       || !global.crypto.subtle.verify
-    ) {
-      return Promise.resolve(false);
-    }
-    if (checked.has(algo)) {
-      return checked.get(algo);
-    }
-    let prom = global.crypto.subtle.importKey('raw', ZERO_BUF, {
-      name: 'HMAC',
-      hash: algo
-    }, true, ['sign']).then(key=>
-      global.crypto.subtle.sign('HMAC', key, ZERO_BUF)
-    ).then(function () {
-        debug('has working subtle crypto for ' + algo);
-        return true;
-      }, function (e) {
-        debug(e.message);
-        return false;
-      });
-    checked.set(algo, prom);
-    return prom;
   }
+  if (!global.crypto
+     || !global.crypto.subtle
+     || !global.crypto.subtle.importKey
+     || !global.crypto.subtle.sign
+     || !global.crypto.subtle.verify
+  ) {
+    return Promise.resolve(false);
+  }
+  if (checked.has(algo)) {
+    return checked.get(algo);
+  }
+  let prom = global.crypto.subtle.importKey('raw', ZERO_BUF, {
+    name: 'HMAC',
+    hash: algo
+  }, true, ['sign']).then(key=>
+    global.crypto.subtle.sign('HMAC', key, ZERO_BUF)
+  ).then(function () {
+      debug('has working subtle crypto for ' + algo);
+      return true;
+    }, function (e) {
+      debug(e.message);
+      return false;
+    });
+  checked.set(algo, prom);
+  return prom;
 }
 
 class Hmac {
