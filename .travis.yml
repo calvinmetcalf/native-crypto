@@ -2,7 +2,8 @@ language: node_js
 sudo: false
 node_js:
   - 4
-  - 5
+  - "5.1.1"
+  - "5.2.0"
 env:
   - CXX=g++-4.8
 addons:
