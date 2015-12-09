@@ -41,6 +41,6 @@
     ]
   },
   "optionalDependencies": {
-    "raw-ecdsa": "^1.0.0"
+    "raw-ecdsa": "^1.1.1"
   }
 }
