@@ -23,6 +23,7 @@
     "jwk-to-pem": "^1.2.2",
     "minimalistic-assert": "^1.0.0",
     "pbkdf2": "^3.0.4",
+    "public-encrypt": "^4.0.0",
     "unreachable-branch-transform": "^0.5.0"
   },
   "devDependencies": {
