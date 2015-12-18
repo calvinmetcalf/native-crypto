@@ -47,7 +47,7 @@ function checkNative() {
 exports.encrypt = encrypt;
 
 function encrypt(key, data) {
-  return checkNative('public', 'encrypt').then(response=>{
+  return checkNative().then(response=>{
     if (response) {
       return subtle.importKey('jwk', key, {
         name: 'RSA-OAEP',
@@ -63,7 +63,7 @@ function encrypt(key, data) {
 exports.decrypt = decrypt;
 
 function decrypt(key, data) {
-  return checkNative('private', 'decrypt').then(response=>{
+  return checkNative().then(response=>{
     if (response) {
       return subtle.importKey('jwk', key, {
         name: 'RSA-OAEP',
