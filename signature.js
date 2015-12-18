@@ -11,7 +11,7 @@ const SIGN = Symbol('sign');
 const VERIFY = Symbol('verify');
 const base64url = require('./base64url');
 const KEY = {};
-const raw = (function () {
+const raw = (function() {
   try {
     return require('raw-ecdsa');
   } catch (e) {
@@ -23,6 +23,7 @@ const EC = elliptic.ec
 var der = require('./der');
 var fromDer = der.fromDer;
 var toDER = der.toDER;
+
 function checkNative(type, algo, curve) {
   algo = normalize(algo);
   if (curve) {
@@ -31,12 +32,7 @@ function checkNative(type, algo, curve) {
   if (global.process && !global.process.browser) {
     return Promise.resolve(false);
   }
-  if (!global.crypto
-     || !global.crypto.subtle
-     || !global.crypto.subtle.importKey
-     || !global.crypto.subtle.sign
-     || !global.crypto.subtle.verify
-  ) {
+  if (!global.crypto || !global.crypto.subtle || !global.crypto.subtle.importKey || !global.crypto.subtle.sign || !global.crypto.subtle.verify) {
     return Promise.resolve(false);
   }
   var id = `${algo}-${type}-${curve}`;
@@ -51,26 +47,33 @@ function checkNative(type, algo, curve) {
   } else {
     opts.modulusLength = 1024;
     opts.publicExponent = new Buffer([0x01, 0x00, 0x01]);
-    opts.hash = {name: algo};
+    opts.hash = {
+      name: algo
+    };
   }
   let signOpts = {
     name: type
   };
   if (curve) {
-    signOpts.hash = {name: algo};
+    signOpts.hash = {
+      name: algo
+    };
   }
   let prom = global.crypto.subtle.generateKey(opts,
-    false,
-    ['sign']
-).then(key=>
+    false, ['sign']
+  ).then(key =>
     global.crypto.subtle.sign(signOpts, key.privateKey, ZERO_BUF)
-  ).then(function () {
-      debug(`has working sublte crypto for type: ${type} with digest ${algo} ${curve ? `with curve: ${curve}` : ''}`);
-      return true;
-    }, function (e) {
-      debug(e.message);
-      return false;
-    });
+  ).then(function() {
+    debug(`has working sublte crypto for type: ${type} with digest ${algo} ${curve ? `
+      with curve: $ {
+        curve
+      }
+      ` : ''}`);
+    return true;
+  }, function(e) {
+    debug(e.message);
+    return false;
+  });
   checked.set(algo, prom);
   return prom;
 }
@@ -85,7 +88,7 @@ var ecNames = {
   'P-521': 'p521'
 }
 class Signature {
-  constructor(key, otherKey){
+  constructor(key, otherKey) {
     if (key.kty && key.kty.toLowerCase() === 'rsa') {
       this.type = 'RSASSA-PKCS1-v1_5';
       this.curve = null;
@@ -95,17 +98,17 @@ class Signature {
     }
     if (this.curve) {
       switch (this.curve) {
-        case 'P-256':
-          this.algo = 'SHA-256';
-          break;
-        case 'P-384':
-          this.algo = 'SHA-384';
-          break;
-        case 'P-521':
-          this.algo = 'SHA-512';
-          break;
+      case 'P-256':
+        this.algo = 'SHA-256';
+        break;
+      case 'P-384':
+        this.algo = 'SHA-384';
+        break;
+      case 'P-521':
+        this.algo = 'SHA-512';
+        break;
       }
-    } else if (key.alg){
+    } else if (key.alg) {
       this.algo = normalize(key.alg);
     } else {
       throw new Error('invalid key');
@@ -177,11 +180,15 @@ class Signature {
       if (this.nodeCrypto) {
         if (sym === SIGN) {
           if (!this.curve) {
-            return this.nodeCrypto.sign(jwk2pem(key, {private: true}));
+            return this.nodeCrypto.sign(jwk2pem(key, {
+              private: true
+            }));
           }
           let hash = this.nodeCrypto.digest();
           if (raw) {
-            let signKey = new raw.Key(new Buffer(jwk2pem(key, {private: true})));
+            let signKey = new raw.Key(new Buffer(jwk2pem(key, {
+              private: true
+            })));
             return fromDer(signKey.sign(hash), lens[this.curve]);
           }
           let ec = new EC(ecNames[this.curve]);
@@ -231,9 +238,13 @@ class Signature {
       };
       if (this.curve) {
         importOpts.namedCurve = this.curve;
-        signOpts.hash = {name: this.algo};
+        signOpts.hash = {
+          name: this.algo
+        };
       } else {
-        importOpts.hash = {name: this.algo};
+        importOpts.hash = {
+          name: this.algo
+        };
       }
 
       return global.crypto.subtle.importKey('jwk', key, importOpts, true, [use]).then(key => {
@@ -245,8 +256,7 @@ class Signature {
         } else if (sym === VERIFY) {
           return global.crypto.subtle.verify(signOpts, key, this.other, data);
         }
-      }
-      );
+      });
     });
   }
   sign() {
@@ -257,13 +267,14 @@ class Signature {
   }
   static generateKey(type, len, algo) {
     return global.crypto.subtle.generateKey({
-          name: type,
-          modulusLength: len,
-          publicExponent: new Buffer([0x01, 0x00, 0x01]),
-          hash: {name: algo}
-      },
-      true,
-      ['sign', 'verify']).then(key => global.crypto.subtle.exportKey('jwk', key));
+      name: type,
+      modulusLength: len,
+      publicExponent: new Buffer([0x01, 0x00, 0x01]),
+      hash: {
+        name: algo
+      }
+    },
+    true, ['sign', 'verify']).then(key => global.crypto.subtle.exportKey('jwk', key));
   }
 }
 module.exports = Signature;
