@@ -23,7 +23,7 @@ const EC = elliptic.ec
 var der = require('./der');
 var fromDer = der.fromDer;
 var toDER = der.toDER;
-
+var subtle = global.crypto && global.crypto.subtle;
 function checkNative(type, algo, curve) {
   algo = normalize(algo);
   if (curve) {
@@ -32,7 +32,7 @@ function checkNative(type, algo, curve) {
   if (global.process && !global.process.browser) {
     return Promise.resolve(false);
   }
-  if (!global.crypto || !global.crypto.subtle || !global.crypto.subtle.importKey || !global.crypto.subtle.sign || !global.crypto.subtle.verify) {
+  if (!subtle || !subtle.importKey || !subtle.sign || !subtle.verify) {
     return Promise.resolve(false);
   }
   var id = `${algo}-${type}-${curve}`;
@@ -59,10 +59,10 @@ function checkNative(type, algo, curve) {
       name: algo
     };
   }
-  let prom = global.crypto.subtle.generateKey(opts,
+  let prom = subtle.generateKey(opts,
     false, ['sign']
   ).then(key =>
-    global.crypto.subtle.sign(signOpts, key.privateKey, ZERO_BUF)
+    subtle.sign(signOpts, key.privateKey, ZERO_BUF)
   ).then(function() {
     debug(`has working sublte crypto for type: ${type} with digest ${algo} ${curve ? `
       with curve: $ {
@@ -247,14 +247,14 @@ class Signature {
         };
       }
 
-      return global.crypto.subtle.importKey('jwk', key, importOpts, true, [use]).then(key => {
+      return subtle.importKey('jwk', key, importOpts, true, [use]).then(key => {
         this.key = null;
         if (sym === SIGN) {
-          return global.crypto.subtle.sign(signOpts, key, data).then(buf => {
+          return subtle.sign(signOpts, key, data).then(buf => {
             return new Buffer(buf);
           });
         } else if (sym === VERIFY) {
-          return global.crypto.subtle.verify(signOpts, key, this.other, data);
+          return subtle.verify(signOpts, key, this.other, data);
         }
       });
     });
@@ -266,7 +266,7 @@ class Signature {
     return this._final(VERIFY);
   }
   static generateKey(type, len, algo) {
-    return global.crypto.subtle.generateKey({
+    return subtle.generateKey({
       name: type,
       modulusLength: len,
       publicExponent: new Buffer([0x01, 0x00, 0x01]),
@@ -274,7 +274,7 @@ class Signature {
         name: algo
       }
     },
-    true, ['sign', 'verify']).then(key => global.crypto.subtle.exportKey('jwk', key));
+    true, ['sign', 'verify']).then(key => subtle.exportKey('jwk', key));
   }
 }
 module.exports = Signature;

@@ -11,46 +11,44 @@ const secLens = new Map([
   ['P-384', 384],
   ['P-521', 520]
 ]);
+const subtle = global.crypto && global.crypto.subtle;
 
 function checkNative(algo) {
   algo = normalize(algo);
   if (!process.browser) {
     return Promise.resolve(false);
   }
-  if (!global.crypto
-    || !global.crypto.subtle
-    || !global.crypto.subtle.generateKey
-    || !global.crypto.subtle.deriveBits) {
+  if (!subtle || !subtle.generateKey || !subtle.deriveBits) {
     return Promise.resolve(false);
   }
   if (checked.has(algo)) {
     return checked.get(algo);
   }
-  let prom = Promise.all([global.crypto.subtle.generateKey({
+  let prom = Promise.all([subtle.generateKey({
     name: 'ecdh',
     namedCurve: algo
-  }, true, ['deriveBits']), global.crypto.subtle.generateKey({
+  }, true, ['deriveBits']), subtle.generateKey({
     name: 'ecdh',
     namedCurve: algo
-  }, true, ['deriveBits'])]).then(resp=>{
+  }, true, ['deriveBits'])]).then(resp => {
     let pub1 = resp[0].publicKey;
     let pub2 = resp[1].publicKey;
     let priv1 = resp[0].privateKey;
     let priv2 = resp[1].privateKey;
     let outLen = secLens.get(algo);
     return Promise.all([
-      global.crypto.subtle.deriveBits({
+      subtle.deriveBits({
         name: 'ecdh',
         namedCurve: algo,
         public: pub1
       }, priv2, outLen),
-      global.crypto.subtle.deriveBits({
+      subtle.deriveBits({
         name: 'ecdh',
         namedCurve: algo,
         public: pub2
       }, priv1, outLen),
-      global.crypto.subtle.exportKey('jwk', priv1)
-    ]).then(resp=>{
+      subtle.exportKey('jwk', priv1)
+    ]).then(resp => {
       if (new Buffer(resp[0]).toString('base64') === new Buffer(resp[1]).toString('base64')) {
         debug(`has working ecdh with curve ${algo}`);
         return true;
@@ -58,7 +56,7 @@ function checkNative(algo) {
         debug(`results did not match for curve ${algo}`);
         return false;
       }
-    }).catch(e=>{
+    }).catch(e => {
       debug(`non working subtle crypto for curve ${algo} due to error ${e}`);
       return false;
     });
@@ -85,25 +83,25 @@ class ECDH {
               pub[key] = priv[key];
             }
           });
-          makeKeys = Promise.all([global.crypto.subtle.importKey('jwk', priv, {
-           name: 'ecdh',
-           namedCurve: this.curve
-         }, true, ['deriveBits']), global.crypto.subtle.importKey('jwk', pub, {
-          name: 'ecdh',
-          namedCurve: this.curve
-        }, true, [])]).then(resp => {
-          return {
-            privateKey: resp[0],
-            publicKey: resp[1]
-          };
-        });
+          makeKeys = Promise.all([subtle.importKey('jwk', priv, {
+            name: 'ecdh',
+            namedCurve: this.curve
+          }, true, ['deriveBits']), subtle.importKey('jwk', pub, {
+            name: 'ecdh',
+            namedCurve: this.curve
+          }, true, [])]).then(resp => {
+            return {
+              privateKey: resp[0],
+              publicKey: resp[1]
+            };
+          });
         } else {
-          makeKeys = global.crypto.subtle.generateKey({
+          makeKeys = subtle.generateKey({
             name: 'ecdh',
             namedCurve: this.curve
           }, true, ['deriveBits']);
         }
-        return makeKeys.then(resp=>{
+        return makeKeys.then(resp => {
           this._map.set(KEYS, resp);
         });
       } else {
@@ -119,20 +117,20 @@ class ECDH {
     });
   }
   getPublic() {
-    return this.check.then(()=>{
+    return this.check.then(() => {
       let pair = this._map.get(KEYS);
       if (this.hasNative) {
-        return global.crypto.subtle.exportKey('jwk', pair.publicKey);
+        return subtle.exportKey('jwk', pair.publicKey);
       } else {
         return jwk.toJwk(pair.getPublicKey(), this.curve);
       }
     });
   }
   getPrivate() {
-    return this.check.then(()=>{
+    return this.check.then(() => {
       let pair = this._map.get(KEYS);
       if (this.hasNative) {
-        return global.crypto.subtle.exportKey('jwk', pair.privateKey);
+        return subtle.exportKey('jwk', pair.privateKey);
       } else {
         let out = jwk.toJwk(pair.getPublicKey(), this.curve);
         out.d = base64url.encode(pair.getPrivateKey());
@@ -141,21 +139,21 @@ class ECDH {
     });
   }
   computeSecret(publicKey) {
-    return this.check.then(()=>
+    return this.check.then(() =>
       Promise.resolve(publicKey)
     ).then(publicKey => {
       let pair = this._map.get(KEYS);
       if (this.hasNative) {
-        return global.crypto.subtle.importKey('jwk', publicKey, {
+        return subtle.importKey('jwk', publicKey, {
           name: 'ecdh',
           namedCurve: this.curve
         }, true, [])
-        .then(key => global.crypto.subtle.deriveBits({
-          name: 'ecdh',
-          namedCurve: this.curve,
-          public: key
-        }, pair.privateKey, secLens.get(this.curve)))
-        .then(res => new Buffer(res));
+          .then(key => subtle.deriveBits({
+            name: 'ecdh',
+            namedCurve: this.curve,
+            public: key
+          }, pair.privateKey, secLens.get(this.curve)))
+          .then(res => new Buffer(res));
       } else {
         return pair.computeSecret(jwk.fromJwk(publicKey));
       }

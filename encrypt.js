@@ -7,43 +7,42 @@ const ZERO_BUF = new Buffer(32);
 ZERO_BUF.fill(0);
 const iv = new Buffer(12);
 iv.fill(0);
+const subtle = global.crypto && global.crypto.subtle;
+
 function checkNative() {
 
   if (global.process && !global.process.browser) {
     return Promise.resolve(false);
   }
-    if (!global.crypto
-       || !global.crypto.subtle
-       || !global.crypto.subtle.importKey
-       || !global.crypto.subtle.encrypt
-    ) {
-      return Promise.resolve(false);
-    }
-    if (check) {
-      return check;
-    }
-    check = global.crypto.subtle.importKey('raw', ZERO_BUF.buffer, {
-      name: 'AES-GCM'
-    }, true, ['encrypt']).then(key=>
-      global.crypto.subtle.encrypt({
-        name: 'AES-GCM',
-        iv: iv
-      }, key, ZERO_BUF.buffer)
-    ).then(function (res) {
-      if (new Buffer(res).toString('base64') === 'zqdAPU1ga24HTsXTuvOdGHJgA8o3pip00aL1jnUGNY7R0whMmaqKn9q7PoPrKMFd') {
-        debug('has working subtle crypto for aes-gcm');
-        return true;
-      } else {
-        debug('encrypted incorectly');
-        return false;
-      }
-    }, function (e) {
-      debug(e && e.message);
-      return false;
-    });
+  if (!subtle || !subtle.importKey || !subtle.encrypt) {
+    return Promise.resolve(false);
+  }
+  if (check) {
     return check;
+  }
+  check = subtle.importKey('raw', ZERO_BUF.buffer, {
+    name: 'AES-GCM'
+  }, true, ['encrypt']).then(key =>
+    subtle.encrypt({
+      name: 'AES-GCM',
+      iv: iv
+    }, key, ZERO_BUF.buffer)
+  ).then(function(res) {
+    if (new Buffer(res).toString('base64') === 'zqdAPU1ga24HTsXTuvOdGHJgA8o3pip00aL1jnUGNY7R0whMmaqKn9q7PoPrKMFd') {
+      debug('has working subtle crypto for aes-gcm');
+      return true;
+    } else {
+      debug('encrypted incorectly');
+      return false;
+    }
+  }, function(e) {
+    debug(e && e.message);
+    return false;
+  });
+  return check;
 }
 module.exports = encrypt;
+
 function encrypt(key, iv, plainText, aad) {
   if (typeof plainText === 'string') {
     plainText = new Buffer(plainText);
@@ -58,10 +57,10 @@ function encrypt(key, iv, plainText, aad) {
       if (aad) {
         opts.additionalData = aad.buffer;
       }
-      return global.crypto.subtle.importKey('raw', key.buffer, {
+      return subtle.importKey('raw', key.buffer, {
         name: 'AES-GCM'
-      }, true, ['encrypt']).then(key=>
-        global.crypto.subtle.encrypt(opts, key, plainText)
+      }, true, ['encrypt']).then(key =>
+        subtle.encrypt(opts, key, plainText)
       ).then(resp => new Buffer(resp));
     } else {
       let algo = getAlgo(key);
@@ -76,11 +75,16 @@ function encrypt(key, iv, plainText, aad) {
     }
   });
 }
+
 function getAlgo(key) {
   switch (key.length) {
-    case 16: return 'aes-128-gcm';
-    case 24: return 'aes-192-gcm';
-    case 32: return 'aes-256-gcm';
-    default: throw new TypeError('invalid key size');
+  case 16:
+    return 'aes-128-gcm';
+  case 24:
+    return 'aes-192-gcm';
+  case 32:
+    return 'aes-256-gcm';
+  default:
+    throw new TypeError('invalid key size');
   }
 }

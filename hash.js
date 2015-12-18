@@ -4,23 +4,25 @@ const normalize = require('./normalize');
 const debug = require('debug')('native-crypto:hash');
 const checked = new Map();
 const ZERO_BUF = new Buffer(8);
+const subtle = global.crypto && global.crypto.subtle;
 ZERO_BUF.fill(0);
+
 function checkNative(algo) {
   algo = normalize(algo);
   if (!process.browser) {
     return Promise.resolve(false);
   }
-  if (!global.crypto || !global.crypto.subtle || !global.crypto.subtle.digest) {
+  if (!subtle || !subtle.digest) {
     return Promise.resolve(false);
   }
   if (checked.has(algo)) {
     return checked.get(algo);
   }
-  let prom = global.crypto.subtle.digest(algo, ZERO_BUF)
-    .then(function () {
+  let prom = subtle.digest(algo, ZERO_BUF)
+    .then(function() {
       debug('has working subtle crypto for ' + algo);
       return true;
-    }, function () {
+    }, function() {
       return false;
     });
   checked.set(algo, prom);
@@ -28,7 +30,7 @@ function checkNative(algo) {
 }
 
 class Hash {
-  constructor(algo){
+  constructor(algo) {
     this.algo = normalize(algo);
     this.hasNative = void 0;
     this.checking = true;
@@ -74,7 +76,7 @@ class Hash {
       } else {
         data = Buffer.concat(this._cache);
       }
-      return global.crypto.subtle.digest(this.algo, data).then(buf =>
+      return subtle.digest(this.algo, data).then(buf =>
         new Buffer(buf)
       );
     });

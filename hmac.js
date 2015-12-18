@@ -6,44 +6,40 @@ const ZERO_BUF = new Buffer(8);
 const normalize = require('./normalize');
 
 const bufferEq = require('buffer-equal-constant-time');
-
+const subtle = global.crypto && global.crypto.subtle;
 ZERO_BUF.fill(0);
-var SIGN = Symbol('sign');
-var VERIFY = Symbol('verify');
+const SIGN = Symbol('sign');
+const VERIFY = Symbol('verify');
+
 function checkNative(algo) {
   algo = normalize(algo);
   if (global.process && !global.process.browser) {
     return Promise.resolve(false);
   }
-  if (!global.crypto
-     || !global.crypto.subtle
-     || !global.crypto.subtle.importKey
-     || !global.crypto.subtle.sign
-     || !global.crypto.subtle.verify
-  ) {
+  if (!subtle || !subtle.importKey || !subtle.sign || !subtle.verify) {
     return Promise.resolve(false);
   }
   if (checked.has(algo)) {
     return checked.get(algo);
   }
-  let prom = global.crypto.subtle.importKey('raw', ZERO_BUF, {
+  let prom = subtle.importKey('raw', ZERO_BUF, {
     name: 'HMAC',
     hash: algo
-  }, true, ['sign']).then(key=>
-    global.crypto.subtle.sign('HMAC', key, ZERO_BUF)
-  ).then(function () {
-      debug('has working subtle crypto for ' + algo);
-      return true;
-    }, function (e) {
-      debug(e.message);
-      return false;
-    });
+  }, true, ['sign']).then(key =>
+    subtle.sign('HMAC', key, ZERO_BUF)
+  ).then(function() {
+    debug('has working subtle crypto for ' + algo);
+    return true;
+  }, function(e) {
+    debug(e.message);
+    return false;
+  });
   checked.set(algo, prom);
   return prom;
 }
 
 class Hmac {
-  constructor(algo, key, otherKey){
+  constructor(algo, key, otherKey) {
     this.algo = normalize(algo);
     this.key = key;
     if (otherKey) {
@@ -114,20 +110,19 @@ class Hmac {
       } else {
         data = Buffer.concat(this._cache);
       }
-      return global.crypto.subtle.importKey('raw', this.key, {
+      return subtle.importKey('raw', this.key, {
         name: 'HMAC',
         hash: this.algo
       }, true, [use]).then(key => {
         this.key = null;
         if (sym === SIGN) {
-          return global.crypto.subtle.sign('HMAC', key, data).then(buf => {
+          return subtle.sign('HMAC', key, data).then(buf => {
             return new Buffer(buf);
           });
         } else if (sym === VERIFY) {
-          return global.crypto.subtle.verify('HMAC', key, this.other, data);
+          return subtle.verify('HMAC', key, this.other, data);
         }
-      }
-      );
+      });
     });
   }
   digest() {
