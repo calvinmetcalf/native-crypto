@@ -43,8 +43,8 @@ function checkNative() {
     return check;
   }
 }
-module.exports = encrypt;
-function encrypt(key, iv, cipherText, aad) {
+module.exports = decrypt;
+function decrypt(key, iv, cipherText, aad) {
   if (typeof plainText === 'string') {
     cipherText = new Buffer(cipherText);
   }
