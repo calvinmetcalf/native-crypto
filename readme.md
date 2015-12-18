@@ -74,3 +74,17 @@ nCrypto.pbkdf2(key, salt, iterations, length, algo).then(function (derivedKey) {
   // you have it
 });
 ```
+
+RSA
+===
+
+For RSA encryption and decryption, only OAEP padding is supported and only using a public key to encrypt and private to decrypt.
+
+```js
+nCrypto.rsa.encrypt(key, data).then(function (result) {
+  // result is a buffer
+});
+nCrypto.rsa.encrypt(key, encryptedData).then(function (result) {
+  // result is a buffer
+});
+``
