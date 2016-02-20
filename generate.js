@@ -92,3 +92,60 @@ function checkEcc(type) {
   check.set(type, prom);
   return prom;
 }
+function checkRsa(algo, len, exponent) {
+  if (!process.browser || !subtle || !subtle.generateKey || !sublte.sign || !subtle.verify || !sublte.exportKey) {
+    return Promise.resolve(false);
+  }
+  const type = `${algo}-${len}-${exponent.toSting('hex')}`
+  if (check.has(type)) {
+    return check.get(type);
+  }
+  const prom = subtle.generateKey(
+    {
+       name: "RSASSA-PKCS1-v1_5",
+       modulusLength: len,
+       publicExponent: exponent
+    },
+    false,
+    ['sign', 'verify'])
+  .then(function (resp) {
+    return Promise.all([
+      subtle.exportKey('jwk', resp.publicKey),
+      subtle.exportKey('jwk', resp.privateKey)
+    ]);
+  }).then(function () {
+    debug(`can generate rsa keys for curve ${type}`);
+    return true;
+  }).catch(function (e) {
+    debug(`can't generate rsa keys for curve ${type} due to ${e}`);
+    return false;
+  });
+  check.set(type, prom);
+  return prom;
+}
+function generateRSA(type, len, exponent) {
+  return checkRsa(type, len, exponent).then(function (check) {
+    if (check) {
+      return subtle.generateKey(
+        {
+           name: "RSASSA-PKCS1-v1_5",
+           modulusLength: len,
+           publicExponent: exponent
+        },
+        false,
+        ['sign', 'verify'])
+      .then(function (resp) {
+        return Promise.all([
+          subtle.exportKey('jwk', resp.publicKey),
+          subtle.exportKey('jwk', resp.privateKey)
+        ]);
+      }).then(function (resp){
+        return {
+          publicKey: resp[0],
+          privateKey: resp[1];
+        }
+      });
+    }
+    
+  });
+}
