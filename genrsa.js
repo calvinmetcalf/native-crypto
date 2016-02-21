@@ -1,5 +1,8 @@
 'use strict';
-const rsaKeygen = require('rsa-keygen');
+let rsaKeygen;
+try {
+  rsaKeygen = require('rsa' + '-keygen');
+} catch(e) {}
 const BN = require('bn.js');
 const debug = require('debug')('native-crypto:gen-rsa');
 const base64url = require('./base64url');
