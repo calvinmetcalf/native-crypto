@@ -24,6 +24,7 @@
     "elliptic": "^6.0.1",
     "inline-process-browser": "^1.0.0",
     "jwk-to-pem": "^1.2.2",
+    "miller-rabin": "^4.0.0",
     "minimalistic-assert": "^1.0.0",
     "pbkdf2": "^3.0.4",
     "pemstrip": "0.0.1",
