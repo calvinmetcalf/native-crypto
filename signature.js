@@ -134,10 +134,8 @@ class Signature {
         if (this.curve) {
           this.nodeCrypto = createHash(algo);
         } else if (this.other) {
-          console.log('rsa-' + algo.toLowerCase());
           this.nodeCrypto = sign.createVerify('RSA-' + algo);
         } else {
-          console.log('rsa-' + algo.toLowerCase());
           this.nodeCrypto = sign.createSign('RSA-' + algo);
         }
         if (this._cache && this._cache.length) {

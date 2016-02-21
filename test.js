@@ -26,6 +26,7 @@ var toDER = der.toDER;
 var EC = require('elliptic').ec;
 var rsa = require('./rsa');
 var pbkdf2Fixtures = require('./pbkdf2-fixtures.json');
+require('./test-generate');
 // from the node module pbkdf2
 var pbkdf2 = require('./pbkdf2');
 test('hash', function(t) {

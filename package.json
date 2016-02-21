@@ -16,6 +16,7 @@
     "browserify-aes": "^1.0.5",
     "browserify-sign": "^4.0.0",
     "buffer-equal-constant-time": "^1.0.1",
+    "co": "^4.6.0",
     "create-ecdh": "^4.0.0",
     "create-hash": "^1.1.2",
     "create-hmac": "^1.1.4",
@@ -25,7 +26,9 @@
     "jwk-to-pem": "^1.2.2",
     "minimalistic-assert": "^1.0.0",
     "pbkdf2": "^3.0.4",
+    "pemstrip": "0.0.1",
     "public-encrypt": "^4.0.0",
+    "randombytes": "^2.0.2",
     "unreachable-branch-transform": "^0.5.0"
   },
   "devDependencies": {

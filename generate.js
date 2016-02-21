@@ -4,6 +4,7 @@ const checks = new Map();
 const debug = require('debug')('native-crypto:pbkdf2');
 const createECDH = require('create-ecdh');
 const base64url = require('./base64url');
+const genRSA = require('./genrsa');
 const jwk = require('./jwk');
 const subtle = global.crypto && global.crypto.subtle;
 module.exports = generate;
@@ -42,7 +43,7 @@ function generateECC(type) {
         }).then(function (resp){
           return {
             publicKey: resp[0],
-            privateKey: resp[1];
+            privateKey: resp[1]
           }
         });
       }
@@ -55,7 +56,7 @@ function generateECC(type) {
         x: publicKey.x,
         y: publicKey.y,
         ext: true,
-        d: base64url.encode(pair.getPrivateKey());
+        d: base64url.encode(pair.getPrivateKey())
       };
       return {
         publicKey,
@@ -142,10 +143,14 @@ function generateRSA(type, len, exponent) {
       }).then(function (resp){
         return {
           publicKey: resp[0],
-          privateKey: resp[1];
+          privateKey: resp[1]
         }
       });
     }
-    
+    return genRSA(len, exponent).then(function (pair) {
+      pair.publicKey.alg = type;
+      pair.privateKey.alg = type;
+      return pair;
+    });
   });
 }

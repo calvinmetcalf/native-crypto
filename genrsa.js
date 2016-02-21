@@ -3,8 +3,15 @@ const rsaKeygen = require('rsa-keygen');
 const BN = require('bn.js');
 const debug = require('debug')('native-crypto:gen-rsa');
 const base64url = require('./base64url');
-
+const randomBytes = require('randombytes');
+const ONE = new BN(1);
+const TWO = new BN(2);
+const MillerRabin = require('miller-rabin');
+const parseRSA = require('./parseRSA');
+const co = require('co');
+let millerRabin;
 module.exports = genRSA;
+const genRSAjs = co.wrap(_genRSAjs);
 function genRSA(len, exponent) {
   if (!process.browser && rsaKeygen) {
     return genRSAnode(len, exponent).catch(e => {
@@ -19,21 +26,24 @@ function genRSAnode(len, exponent) {
     const exponentNum = parseInt(exponent.toString('hex'), 16);
     const key = rsaKeygen.generate(len, exponentNum);
     debug('generated rsa key nativly');
-    yes(key);
+    yes(parseRSA({
+      publicKey: key.public_key,
+      privateKey: key.private_key
+    }));
   });
 }
-const ONE = new BN(1);
-function genRSAjs(len, exponent) {
+const getPrime = co.wrap(_getPrime);
+function *  _genRSAjs(len, exponent) {
   const e = new BN(exponent);
   const qlen = len >> 1;
   const plen = len - qlen;
-  let q = getPrime(qlen);
-  let p = getPrime(plen);
+  let q = yield getPrime(qlen);
+  let p = yield getPrime(plen);
   let phi, n;
   while (true) {
     let pcmpq = p.cmp(q);
     if (pcmpq === 0) {
-      p = getPrime(plen);
+      p = yield getPrime(plen);
       continue;
     }
     if (pcmpq < 0) {
@@ -42,11 +52,11 @@ function genRSAjs(len, exponent) {
       q = tmp;
     }
     if (!ensureCoprime(p, e)) {
-      p = getPrime(plen);
+      p = yield getPrime(plen);
       continue;
     }
     if (!ensureCoprime(q, e)) {
-      q = getPrime(qlen);
+      q = yield getPrime(qlen);
       continue;
     }
     n = p.mul(q);
@@ -54,17 +64,17 @@ function genRSAjs(len, exponent) {
     phi.isub(p);
     phi.iadd(ONE);
     if (!ensureCoprime(phi, e)) {
-      q = getPrime(qlen);
-      p = getPrime(plen);
+      q = yield getPrime(qlen);
+      p = yield getPrime(plen);
       continue;
     }
     if (n.bitLength() !== len) {
-      q = getPrime(qlen);
+      q = yield getPrime(qlen);
       continue;
     }
     break;
   }
-  const n = e.invm(ONE);
+  const d = e.invm(phi);
   const dp = d.mod(p.sub(ONE));
   const dq = d.mod(q.sub(ONE));
   const qi = q.mod(p);
@@ -91,8 +101,76 @@ function genRSAjs(len, exponent) {
       key_ops: ['sign'],
       ext: true
     }
-  }
+  };
 }
 function ensureCoprime(pq, e) {
   return pq.sub(ONE).gcd(e).cmp(ONE) === 0;
+}
+var primes = null;
+
+function _getPrimes() {
+  if (primes !== null)
+    return primes;
+
+  const limit = 0x100000;
+  const res = [];
+  res[0] = 2;
+  let j;
+  for (let i = 1, k = 3; k < limit; k += 2) {
+    let sqrt = Math.ceil(Math.sqrt(k));
+    for (j = 0; j < i && res[j] <= sqrt; j++)
+      if (k % res[j] === 0)
+        break;
+
+    if (i !== j && res[j] <= sqrt)
+      continue;
+
+    res[i++] = k;
+  }
+  primes = res;
+  return res;
+}
+
+function simpleSieve(p) {
+  var primes = _getPrimes();
+
+  for (let i = 0; i < primes.length; i++)
+    if (p.modn(primes[i]) === 0) {
+      if (p.cmpn(primes[i]) === 0) {
+        return true;
+      } else {
+        return false;
+      }
+    }
+
+  return true;
+}
+function fermatTest(p) {
+  const red = BN.mont(p);
+  return TWO.toRed(red).redPow(p.sub(ONE)).fromRed().cmp(ONE) === 0;
+}
+const immediate = typeof setImmediate === 'function' ? setImmediate : setTimeout;
+function nextTick () {
+  return new Promise(function (done) {
+    immediate(done);
+  });
+}
+function * _getPrime(bits) {
+  while (true) {
+    const num = new BN(randomBytes(Math.ceil(bits / 8)));
+    while (num.bitLength() > bits) {
+       num.ishrn(1);
+     }
+     if (num.isEven()) {
+       num.iadd(ONE);
+     }
+     if (!num.testn(1)) {
+       num.iadd(TWO);
+     }
+     millerRabin = millerRabin || new MillerRabin();
+     if (simpleSieve(num) && fermatTest(num) && millerRabin.test(num)) {
+       return num;
+     }
+     yield nextTick();
+   }
 }
