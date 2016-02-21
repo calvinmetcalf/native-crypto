@@ -88,3 +88,28 @@ nCrypto.rsa.encrypt(key, encryptedData).then(function (result) {
   // result is a buffer
 });
 ``
+
+Key Generation
+===
+
+You can generate key pairs for signing/verifying in either RSA or ECDSA.
+
+Accepts either a ECC curve:
+
+```js
+nCrypto.generate('P-256').then(function (keypair) {
+  // keypair.publicKey and keypair.privateKey are JWK
+});
+nCrypto.generate('P-384').then(...
+nCrypto.generate('P-521').then(...
+```
+
+or an RSA algorithm identifier and optional length and exponent (as buffer)
+
+```js
+nCrypto.generate('RS256').then(...
+nCrypto.generate('RS512', 4096, new Buffer([1, 0, 1])).then(...
+nCrypto.generate('RS384', 2048, new Buffer([3])).then(...
+```
+
+key length defaults to 4096 and public exponent to 65537 (aka `new Buffer([1, 0, 1])`)
