@@ -49,7 +49,7 @@ Signatures
 ===
 
 Only JWK are supported and both RSA or ECDSA keys are supported (DSA is not
-supported by web crypto).
+supported by web crypto).  If using RSA make sure the `.alg` parameter is set on the key and is one of `RS256`, `RS384`, or `RS512` (based on what hash function you want to be using).
 
 ```js
 var sign = new nCrypto.Signature(privateKey);
