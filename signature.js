@@ -11,13 +11,16 @@ const SIGN = Symbol('sign');
 const VERIFY = Symbol('verify');
 const base64url = require('./base64url');
 const KEY = {};
-const raw = (function() {
-  try {
-    return require('raw-ecdsa');
-  } catch (e) {
-    return null;
-  }
-}());
+let raw = null;
+if (!process.browser) {
+  raw = (function() {
+    try {
+      return require('raw-ecdsa');
+    } catch (e) {
+      return null;
+    }
+  }());
+}
 const elliptic = require('elliptic');
 const EC = elliptic.ec
 var der = require('./der');
@@ -65,9 +68,7 @@ function checkNative(type, algo, curve) {
     subtle.sign(signOpts, key.privateKey, ZERO_BUF)
   ).then(function() {
     debug(`has working sublte crypto for type: ${type} with digest ${algo} ${curve ? `
-      with curve: $ {
-        curve
-      }
+      with curve: ${curve}
       ` : ''}`);
     return true;
   }, function(e) {

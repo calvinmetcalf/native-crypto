@@ -16,7 +16,6 @@
     "browserify-aes": "^1.0.5",
     "browserify-sign": "^4.0.0",
     "buffer-equal-constant-time": "^1.0.1",
-    "co": "^4.6.0",
     "create-ecdh": "^4.0.0",
     "create-hash": "^1.1.2",
     "create-hmac": "^1.1.4",

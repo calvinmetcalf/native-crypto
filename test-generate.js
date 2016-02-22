@@ -29,7 +29,7 @@ test('test ecdsa', function (t) {
 
 test('test rsa', function (t) {
   function testRSA(type, len, e) {
-    t.test(`type: ${type}, len: ${len ? len: 'default len'}, e: ${e ? e.toString('hex') : 'default e'}`, function (t) {
+    t.test(`type: ${type}, len: ${len ? len: 'default len'}, e: ${e ? typeof e === 'number' ? e : e.toString('hex') : 'default e'}`, function (t) {
       t.plan(1);
       var pair;
       var data = randomBytes(100);
@@ -39,15 +39,15 @@ test('test rsa', function (t) {
       }).then(function (sig) {
         return new Signature(pair.publicKey, sig).update(data).verify();
       }).then(function (worked) {
-        t.ok(worked);
+        t.ok(worked, 'worked to verify what we signed');
       }, function (e) {
-        t.ok(false, e.stack);
+        t.error(e || new Error('should be here'));
       });
     });
   }
   var algos = ['rs256', 'rs384', 'rs512'];
   var lens = [1024, 2048, 4096, null];
-  var es = [new Buffer([3]), new Buffer([5]), new Buffer([1, 0, 1]), null];
+  var es = [3, new Buffer([5]), 0x10001, null];
   var i = -1;
   var algo, len, e, j, k;
   while (++i < algos.length) {
