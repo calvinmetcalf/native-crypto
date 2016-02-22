@@ -58,12 +58,14 @@ function genRSAjs(len, exponent) {
       p = q;
       q = tmp;
     }
-    if (!ensureCoprime(p.sub(ONE), e)) {
+    let pmin = p.sub(ONE);
+    if (!ensureCoprime(pmin, e)) {
       return getPrime(plen).then(function (newp) {
         return checkPrimes(q, newp);
       });
     }
-    if (!ensureCoprime(q.sub(ONE), e)) {
+    let qmin = q.sub(ONE);
+    if (!ensureCoprime(qmin, e)) {
       return getPrime(qlen).then(function (newq) {
         return checkPrimes(newq, p);
       });
@@ -84,17 +86,19 @@ function genRSAjs(len, exponent) {
         return checkPrimes(newq, p);
       });
     }
-    return {p,q,phi,n};
+    return {p,q,phi,n, pmin, qmin};
   }
   function after(opts) {
     let p = opts.p;
     let q = opts.q;
     let phi = opts.phi;
     let n = opts.n;
+    let pmin = opts.pmin;
+    let qmin = opts.qmin;
     const d = e.invm(phi);
-    const dp = d.mod(p.sub(ONE));
-    const dq = d.mod(q.sub(ONE));
-    const qi = q.mod(p);
+    const dp = d.mod(pmin);
+    const dq = d.mod(qmin);
+    const qi = q.invm(p);
     const encodedN = base64url.encode(new Buffer(n.toArray()));
     const encodedE = base64url.encode(new Buffer(e.toArray()));
     return {
