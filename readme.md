@@ -87,7 +87,7 @@ nCrypto.rsa.encrypt(key, data).then(function (result) {
 nCrypto.rsa.encrypt(key, encryptedData).then(function (result) {
   // result is a buffer
 });
-``
+```
 
 Key Generation
 ===
