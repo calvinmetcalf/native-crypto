@@ -23,9 +23,9 @@ if (!process.browser) {
 }
 const elliptic = require('elliptic');
 const EC = elliptic.ec
-var der = require('./der');
+var der = require('ecc-web-sig');
 var fromDer = der.fromDer;
-var toDER = der.toDER;
+var toDer = der.toDer;
 var subtle = global.crypto && global.crypto.subtle;
 function checkNative(type, algo, curve) {
   algo = normalize(algo);
@@ -188,7 +188,7 @@ class Signature {
             let signKey = new raw.Key(new Buffer(jwk2pem(key, {
               private: true
             })));
-            return fromDer(signKey.sign(hash), lens[this.curve]);
+            return fromDer(signKey.sign(hash), this.curve);
           }
           let ec = new EC(ecNames[this.curve]);
           let keyPair = ec.keyFromPrivate(base64url.decode(key.d));
@@ -207,7 +207,7 @@ class Signature {
           if (!this.curve) {
             return this.nodeCrypto.verify(jwk2pem(key), this.other);
           }
-          let other = toDER(this.other);
+          let other = toDer(this.other);
 
           let hash = this.nodeCrypto.digest();
           if (raw) {

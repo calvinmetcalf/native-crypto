@@ -20,9 +20,9 @@ var decrypt = require('./decrypt');
 var ECDH = require('./ecdh');
 var Signature = require('./signature');
 var jwk2pem = require('jwk-to-pem');
-var der = require('./der');
+var der = require('ecc-web-sig');
 var fromDer = der.fromDer;
-var toDER = der.toDER;
+var toDer = der.toDer;
 var EC = require('elliptic').ec;
 var rsa = require('./rsa');
 var pbkdf2Fixtures = require('./pbkdf2-fixtures.json');
@@ -296,12 +296,12 @@ function runedsa(i) {
       runTestBrowser('p384', 'sha384', 48, priv384, pub384);
       runTestBrowser('p521', 'sha512', 66, priv521, pub521);
     } else {
-      runTestNode('p256', 'sha256', 32, priv256, pub256);
-      runTestNode('p384', 'sha384', 48, priv384, pub384);
-      runTestNode('p521', 'sha512', 66, priv521, pub521);
+      runTestNode('p256', 'sha256', priv256, pub256);
+      runTestNode('p384', 'sha384', priv384, pub384);
+      runTestNode('p521', 'sha512', priv521, pub521);
     }
 
-    function runTestNode(curve, hash, bitLen, priv, pub) {
+    function runTestNode(curve, hash, priv, pub) {
       t.test('ecdsa ' + curve, function(t) {
         var nodePriv = new Buffer(jwk2pem(priv, {
           private: true
@@ -310,13 +310,13 @@ function runedsa(i) {
         var data = new Buffer('fooooooo');
         var npriv = new raw.Key(nodePriv);
         var nodeSig = npriv.sign(crypto.createHash(hash).update(data).digest());
-        var roundtrip = toDER(fromDer(nodeSig, bitLen));
+        var roundtrip = toDer(fromDer(nodeSig, curve));
         t.equals(roundtrip.toString('hex'), nodeSig.toString('hex'), 'round trips');
         new Signature(priv).update(data).sign().then(function(sig) {
           var npub = new raw.Key(nodePub);
           var h = crypto.createHash(hash).update(data).digest();
-          t.ok(npub.verify(toDER(sig), h), 'node verify');
-          return new Signature(pub, fromDer(nodeSig, bitLen)).update(data).verify();
+          t.ok(npub.verify(toDer(sig), h), 'node verify');
+          return new Signature(pub, fromDer(nodeSig, curve)).update(data).verify();
         }).then(function(res) {
           t.ok(res, 'we verify');
           t.end();
@@ -327,7 +327,7 @@ function runedsa(i) {
       });
     }
 
-    function runTestBrowser(curve, hash, bitLen, priv, pub) {
+    function runTestBrowser(curve, hash, priv, pub) {
       t.test('ecdsa ' + curve, function(t) {
         var nodePriv = new Buffer(jwk2pem(priv, {
           private: true
@@ -336,15 +336,15 @@ function runedsa(i) {
         var data = new Buffer('fooooooo');
         var npriv = ec.keyFromPrivate(base64url.decode(priv.d));
         var nodeSig = new Buffer(npriv.sign(crypto.createHash(hash).update(data).digest()).toDER());
-        var roundtrip = toDER(fromDer(nodeSig, bitLen));
+        var roundtrip = toDer(fromDer(nodeSig, curve));
         t.equals(roundtrip.toString('hex'), nodeSig.toString('hex'), 'round trips');
         new Signature(priv).update(data).sign().then(function(sig) {
           var h = crypto.createHash(hash).update(data).digest();
-          t.ok(ec.verify(h, toDER(sig), {
+          t.ok(ec.verify(h, toDer(sig), {
             x: base64url.decode(pub.x).toString('hex'),
             y: base64url.decode(pub.y).toString('hex')
           }), 'node verify');
-          return new Signature(pub, fromDer(nodeSig, bitLen)).update(data).verify();
+          return new Signature(pub, fromDer(nodeSig, curve)).update(data).verify();
         }).then(function(res) {
           t.ok(res, 'we verify');
           t.end();
