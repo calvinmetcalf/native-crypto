@@ -149,7 +149,7 @@ function checkRsa(algo, len, exponent) {
     debug(`can't generate rsa keys for algo: ${algo}, len: ${len}, exponent: ${exponent.toString('hex')}`);
     return false;
   });
-  checks.set(type, prom.then(()=>true));
+  checks.set(type, prom.then(resp=>!!resp));
   return prom;
 }
 function generateRSA(algo, len, exponent) {
