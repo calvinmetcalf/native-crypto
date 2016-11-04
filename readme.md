@@ -66,7 +66,7 @@ verify.verify().then(function (result) {
 PBKDF2
 ===
 
-No parameters are optional, key and salt must be buffers, length is in bytes,
+No parameters are optional key may be a string or buffer, salt must be buffers, length is in bytes,
 algo may be any of the supported hash algorithms.
 
 ```js

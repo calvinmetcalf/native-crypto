@@ -35,12 +35,15 @@ module.exports = pbkdf2;
 
 function pbkdf2(password, salt, iterations, length, algo) {
   return checkNative(algo).then(res => {
+    if (typeof password === 'string') {
+      password = Buffer.from(password, 'utf8');
+    }
     if (res) {
       return browserPbkdf2(password, salt, iterations, length, algo);
     }
     let alg = normalize(algo, true);
     return new Promise((success, failure) => {
-      compat.pbkdf2(password, salt, iterations, length, algo, (err, res) => {
+      compat.pbkdf2(password, salt, iterations, length, alg, (err, res) => {
         if (err) {
           return failure(err);
         }
