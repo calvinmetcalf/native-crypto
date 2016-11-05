@@ -193,7 +193,7 @@ class Signature {
             let signKey = new raw.Key(new Buffer(jwk2pem(key, {
               private: true
             })));
-            return Buffer.from(fromDer(signKey.sign(hash),  otherECNames[this.curve]), 'base64');
+            return new Buffer(fromDer(signKey.sign(hash),  otherECNames[this.curve]), 'base64');
           }
           let ec = new EC(ecNames[this.curve]);
           let keyPair = ec.keyFromPrivate(base64url.decode(key.d));

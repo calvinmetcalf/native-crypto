@@ -36,7 +36,7 @@ module.exports = pbkdf2;
 function pbkdf2(password, salt, iterations, length, algo) {
   return checkNative(algo).then(res => {
     if (typeof password === 'string') {
-      password = Buffer.from(password, 'utf8');
+      password = new Buffer(password, 'utf8');
     }
     if (res) {
       return browserPbkdf2(password, salt, iterations, length, algo);

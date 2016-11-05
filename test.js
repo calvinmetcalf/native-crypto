@@ -314,13 +314,13 @@ function runedsa(i) {
         var data = new Buffer('fooooooo');
         var npriv = new raw.Key(nodePriv);
         var nodeSig = npriv.sign(crypto.createHash(hash).update(data).digest());
-        var roundtrip = toDer(Buffer.from(fromDer(nodeSig, otherECNames[curve]), 'base64'), otherECNames[curve]);
+        var roundtrip = toDer(new Buffer(fromDer(nodeSig, otherECNames[curve]), 'base64'), otherECNames[curve]);
         t.equals(roundtrip.toString('hex'), nodeSig.toString('hex'), 'round trips');
         new Signature(priv).update(data).sign().then(function(sig) {
           var npub = new raw.Key(nodePub);
           var h = crypto.createHash(hash).update(data).digest();
           t.ok(npub.verify(toDer(sig, otherECNames[curve]), h), 'node verify');
-          return new Signature(pub, Buffer.from(fromDer(nodeSig, otherECNames[curve]), 'base64')).update(data).verify();
+          return new Signature(pub, new Buffer(fromDer(nodeSig, otherECNames[curve]), 'base64')).update(data).verify();
         }).then(function(res) {
           t.ok(res, 'we verify');
           t.end();
@@ -340,7 +340,7 @@ function runedsa(i) {
         var data = new Buffer('fooooooo');
         var npriv = ec.keyFromPrivate(base64url.decode(priv.d));
         var nodeSig = new Buffer(npriv.sign(crypto.createHash(hash).update(data).digest()).toDER());
-        var roundtrip = toDer(Buffer.from(fromDer(nodeSig, otherECNames[curve]), 'base64'), otherECNames[curve]);
+        var roundtrip = toDer(new Buffer(fromDer(nodeSig, otherECNames[curve]), 'base64'), otherECNames[curve]);
         t.equals(roundtrip.toString('hex'), nodeSig.toString('hex'), 'round trips');
         new Signature(priv).update(data).sign().then(function(sig) {
           var h = crypto.createHash(hash).update(data).digest();
@@ -348,7 +348,7 @@ function runedsa(i) {
             x: base64url.decode(pub.x).toString('hex'),
             y: base64url.decode(pub.y).toString('hex')
           }), 'node verify');
-          return new Signature(pub, Buffer.from(fromDer(nodeSig, otherECNames[curve]), 'base64')).update(data).verify();
+          return new Signature(pub, new Buffer(fromDer(nodeSig, otherECNames[curve]), 'base64')).update(data).verify();
         }).then(function(res) {
           t.ok(res, 'we verify');
           t.end();
@@ -414,7 +414,7 @@ test('pbkdf2', function(t) {
           pbkdf2(key, salt, iterations, length, algo).then(function(res) {
             t.equals(res.toString('hex'), result);
           }, function(err) {
-            t.notOk(err || true);
+            t.error(err || true, 'should be no error');
           });
         });
       });
