@@ -2,16 +2,17 @@
   "name": "native-crypto",
   "version": "1.6.0",
   "description": "",
-  "main": "index.js",
+  "main": "lib/index.js",
+  "browser": "browser/index.js",
   "scripts": {
-    "test": "node test.js",
-    "browser": "zuul --no-coverage --local 8080 -- test.js"
+    "test": "node test/index.js",
+    "browser": "zuul --no-coverage --local 8080 -- test/index.js",
+    "build": "rimraf browser && mkdirp browser && node ./bin.js"
   },
   "author": "Calvin Metcalf <calvin.metcalf@gmail.com>",
   "license": "MIT",
   "dependencies": {
     "asn1.js": "^4.5.0",
-    "babelify": "^6.3.0",
     "bn.js": "^4.10.3",
     "browserify-aes": "^1.0.5",
     "browserify-sign": "^4.0.0",
@@ -22,30 +23,27 @@
     "debug": "^2.2.0",
     "ecdsa-sig-formatter": "^1.0.7",
     "elliptic": "^6.0.1",
-    "inline-process-browser": "^1.0.0",
     "jwk-to-pem": "^1.2.2",
     "miller-rabin": "^4.0.0",
     "minimalistic-assert": "^1.0.0",
     "pbkdf2": "^3.0.4",
     "pemstrip": "0.0.1",
     "public-encrypt": "^4.0.0",
-    "randombytes": "^2.0.2",
-    "unreachable-branch-transform": "^0.5.0"
+    "randombytes": "^2.0.2"
   },
   "devDependencies": {
+    "babel-preset-es2015": "^6.18.0",
+    "babelify": "^7.3.0",
+    "inline-process-browser": "^1.0.0",
+    "mkdirp": "^0.5.1",
+    "rimraf": "^2.5.4",
     "tape": "^4.2.1",
+    "unreachable-branch-transform": "^0.5.0",
     "zuul": "^3.6.0"
   },
   "repository": {
     "type": "git",
     "url": "git@github.com:calvinmetcalf/native-crypto.git"
-  },
-  "browserify": {
-    "transform": [
-      "inline-process-browser",
-      "unreachable-branch-transform",
-      "babelify"
-    ]
   },
   "optionalDependencies": {
     "raw-ecdsa": "^1.1.1",

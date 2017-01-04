@@ -1,8 +1,8 @@
 
 var test = require('tape');
 var randomBytes = require('randombytes');
-var generate = require('./generate');
-var Signature = require('./signature');
+var generate = require('../generate');
+var Signature = require('../signature');
 
 test('test ecdsa', function (t) {
   function testECDSA(type) {

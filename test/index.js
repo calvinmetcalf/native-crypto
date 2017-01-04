@@ -8,27 +8,27 @@ if (process.browser) {
     raw = require('raw-ecdsa');
   } catch (e) {}
 }
-var base64url = require('./base64url');
+var base64url = require('../lib/base64url');
 
-var jwk = require('./jwk');
+var jwk = require('../lib/jwk');
 var crypto = require('crypto');
 var test = require('tape');
-var Hash = require('./hash');
-var Hmac = require('./hmac');
-var encrypt = require('./encrypt');
-var decrypt = require('./decrypt');
-var ECDH = require('./ecdh');
-var Signature = require('./signature');
+var Hash = require('../hash');
+var Hmac = require('../hmac');
+var encrypt = require('../encrypt');
+var decrypt = require('../decrypt');
+var ECDH = require('../lib/ecdh');
+var Signature = require('../signature');
 var jwk2pem = require('jwk-to-pem');
 var format = require('ecdsa-sig-formatter');
 var fromDer = format.derToJose;
 var toDer = format.joseToDer;
 var EC = require('elliptic').ec;
-var rsa = require('./rsa');
+var rsa = require('../rsa');
 var pbkdf2Fixtures = require('./pbkdf2-fixtures.json');
 require('./test-generate');
 // from the node module pbkdf2
-var pbkdf2 = require('./pbkdf2');
+var pbkdf2 = require('../pbkdf2');
 test('hash', function(t) {
   var buf = new Buffer(8);
   buf.fill(0);
