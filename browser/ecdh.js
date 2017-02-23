@@ -16,9 +16,6 @@ var subtle = global.crypto && global.crypto.subtle;
 
 function checkNative(algo) {
   algo = normalize(algo);
-  if (!true) {
-    return Promise.resolve(false);
-  }
   if (!subtle || !subtle.generateKey || !subtle.deriveBits) {
     return Promise.resolve(false);
   }
@@ -78,26 +75,24 @@ var ECDH = function () {
         _this.hasNative = true;
         var makeKeys = void 0;
         if (priv) {
-          (function () {
-            var pub = {};
-            Object.keys(priv).forEach(function (key) {
-              if (key !== 'd') {
-                pub[key] = priv[key];
-              }
-            });
-            makeKeys = Promise.all([subtle.importKey('jwk', priv, {
-              name: 'ecdh',
-              namedCurve: _this.curve
-            }, true, ['deriveBits']), subtle.importKey('jwk', pub, {
-              name: 'ecdh',
-              namedCurve: _this.curve
-            }, true, [])]).then(function (resp) {
-              return {
-                privateKey: resp[0],
-                publicKey: resp[1]
-              };
-            });
-          })();
+          var pub = {};
+          Object.keys(priv).forEach(function (key) {
+            if (key !== 'd') {
+              pub[key] = priv[key];
+            }
+          });
+          makeKeys = Promise.all([subtle.importKey('jwk', priv, {
+            name: 'ecdh',
+            namedCurve: _this.curve
+          }, true, ['deriveBits']), subtle.importKey('jwk', pub, {
+            name: 'ecdh',
+            namedCurve: _this.curve
+          }, true, [])]).then(function (resp) {
+            return {
+              privateKey: resp[0],
+              publicKey: resp[1]
+            };
+          });
         } else {
           makeKeys = subtle.generateKey({
             name: 'ecdh',

@@ -17,15 +17,6 @@ var VERIFY = Symbol('verify');
 var base64url = require('./base64url');
 var KEY = {};
 var raw = null;
-if (!true) {
-  raw = function () {
-    try {
-      return require('raw-ecdsa');
-    } catch (e) {
-      return null;
-    }
-  }();
-}
 var elliptic = require('elliptic');
 var EC = elliptic.ec;
 var format = require('ecdsa-sig-formatter');
