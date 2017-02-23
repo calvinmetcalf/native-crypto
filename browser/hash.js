@@ -14,9 +14,6 @@ ZERO_BUF.fill(0);
 
 function checkNative(algo) {
   algo = normalize(algo);
-  if (!true) {
-    return Promise.resolve(false);
-  }
   if (!subtle || !subtle.digest) {
     return Promise.resolve(false);
   }

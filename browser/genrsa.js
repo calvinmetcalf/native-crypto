@@ -1,13 +1,6 @@
 'use strict';
 
-var rsaKeygen = false;;
-if (!true) {
-  rsaKeygen = function () {
-    try {
-      return require('rsa' + '-keygen');
-    } catch (e) {}
-  }();
-}
+var rsaKeygen = false;
 var BN = require('bn.js');
 var debug = require('debug')('native-crypto:gen-rsa');
 var base64url = require('./base64url');
@@ -19,7 +12,7 @@ var parseRSA = require('./parseRSA');
 var millerRabin = void 0;
 module.exports = genRSA;
 function genRSA(len, exponent) {
-  if (!true && rsaKeygen !== false) {
+  if (!true) {
     return genRSAnode(len, exponent).catch(function (e) {
       debug('unable to generate key nativly due to ' + e);
       return genRSAjs(len, exponent);

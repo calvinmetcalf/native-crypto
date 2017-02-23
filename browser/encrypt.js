@@ -1,7 +1,5 @@
 'use strict';
 
-var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
-
 var aes = require('browserify-aes');
 var debug = require('debug')('native-crypto:encrypt');
 var check = null;
@@ -53,26 +51,20 @@ function encrypt(key, iv, plainText, aad) {
 
   return checkNative().then(function (res) {
     if (res) {
-      var _ret = function () {
-        var opts = {
-          name: 'AES-GCM',
-          iv: iv
-        };
-        if (aad) {
-          opts.additionalData = aad.buffer;
-        }
-        return {
-          v: subtle.importKey('raw', key.buffer, {
-            name: 'AES-GCM'
-          }, true, ['encrypt']).then(function (key) {
-            return subtle.encrypt(opts, key, plainText);
-          }).then(function (resp) {
-            return new Buffer(resp);
-          })
-        };
-      }();
-
-      if ((typeof _ret === 'undefined' ? 'undefined' : _typeof(_ret)) === "object") return _ret.v;
+      var opts = {
+        name: 'AES-GCM',
+        iv: iv
+      };
+      if (aad) {
+        opts.additionalData = aad.buffer;
+      }
+      return subtle.importKey('raw', key.buffer, {
+        name: 'AES-GCM'
+      }, true, ['encrypt']).then(function (key) {
+        return subtle.encrypt(opts, key, plainText);
+      }).then(function (resp) {
+        return new Buffer(resp);
+      });
     } else {
       var algo = getAlgo(key);
       var cipher = aes.createCipheriv(algo, key, iv);

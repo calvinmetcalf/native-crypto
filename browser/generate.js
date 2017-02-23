@@ -74,8 +74,8 @@ function generateECC(type) {
   });
 }
 function checkEcc(type) {
-  if (!true || subtle === undefined || !subtle.generateKey || !subtle.sign || !subtle.verify || !subtle.exportKey) {
-    if (true) {
+  if (subtle === undefined || !subtle.generateKey || !subtle.sign || !subtle.verify || !subtle.exportKey) {
+    {
       debug('subtle crypto not supported');
     }
     return Promise.resolve(false);
@@ -104,8 +104,8 @@ function checkEcc(type) {
   return prom;
 }
 function checkRsa(algo, len, exponent) {
-  if (!true || subtle === undefined || !subtle.generateKey || !subtle.sign || !subtle.verify || !subtle.exportKey) {
-    if (true) {
+  if (subtle === undefined || !subtle.generateKey || !subtle.sign || !subtle.verify || !subtle.exportKey) {
+    {
       debug('subtle crypto not supported');
     }
     return Promise.resolve(false);

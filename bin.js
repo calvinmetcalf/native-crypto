@@ -5,7 +5,7 @@
 const fs = require('fs');
 const path = require('path');
 const inlineProcess = require('inline-process-browser');
-const unreacable = require('inline-process-browser');
+const unreacable = require('unreachable-branch-transform');
 const Babelify = require('babelify');
 
 const dir = fs.readdirSync('./lib');
