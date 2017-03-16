@@ -1,4 +1,4 @@
-crypto-native
+native-crypto
 ===
 
 The intent of this is browserifable crypt, which uses the node module on the server, the subtle crypto api if available and the browserify-crypto if not.
