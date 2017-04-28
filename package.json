@@ -45,6 +45,16 @@
     "type": "git",
     "url": "git@github.com:calvinmetcalf/native-crypto.git"
   },
+  "browser": {
+    "./lib/decrypt.js": "./browser/decrypt.js",
+    "./lib/encrypt.js": "./browser/encrypt.js",
+    "./lib/generate.js": "./browser/generate.js",
+    "./lib/hash.js": "./browser/hash.js",
+    "./lib/hmac.js": "./browser/hmac.js",
+    "./lib/pbkdf2.js": "./browser/pbkdf2.js",
+    "./lib/rsa.js": "./browser/rsa.js",
+    "./lib/signature.js": "./browser/signature.js"
+  },
   "optionalDependencies": {
     "raw-ecdsa": "^1.1.1",
     "rsa-keygen": "^1.0.5"
