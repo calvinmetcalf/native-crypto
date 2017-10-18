@@ -1,6 +1,6 @@
 {
   "name": "native-crypto",
-  "version": "1.8.0",
+  "version": "1.8.1",
   "description": "",
   "main": "lib/index.js",
   "browser": {
