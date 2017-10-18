@@ -11,7 +11,8 @@
     "./lib/hmac.js": "./browser/hmac.js",
     "./lib/pbkdf2.js": "./browser/pbkdf2.js",
     "./lib/rsa.js": "./browser/rsa.js",
-    "./lib/signature.js": "./browser/signature.js"
+    "./lib/signature.js": "./browser/signature.js",
+    "./lib/ecdh.js": "./browser/ecdh.js"
   },
   "scripts": {
     "test": "node test/index.js",

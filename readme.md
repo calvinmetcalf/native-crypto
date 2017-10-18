@@ -92,7 +92,7 @@ nCrypto.rsa.encrypt(key, encryptedData).then(function (result) {
 Key Generation
 ===
 
-You can generate key pairs for signing/verifying in either RSA or ECDSA.
+You can generate key pairs for signing/verifying in either RSA or ECDSA, or use with ECDH.
 
 Accepts either a ECC curve:
 
@@ -113,3 +113,31 @@ nCrypto.generate('RS384', 2048, 3).then(...
 ```
 
 key length defaults to 4096 and public exponent to 65537 (aka `0x10001`)
+
+
+ECDH
+===
+
+Generate an ECDH Object, accepts a curve type and optionally a private key.
+
+```js
+var ecdh1 = new nCrypto.ECDH('P-256'); // generates a new key
+var ecdh2 = new nCrypto.ECDH('P-256', keypair.privateKey);
+// you can pass in the privateKey from a generate command
+```
+
+You can use `.getPublic()` and `.getPrivate()` to get the public and private keys of the pair, this is especially handy if you had it generate the key for you, both return a promise.
+
+```js
+ecdh1.getPublic().then(function (publicKey) {
+  // do stuff
+});
+```
+
+Finally you can generate a shared secret with the `.computeSecret` method, which takes a public key as a method.
+
+```js
+ecdh2.computeSecret(publicKey).then(function (secret) {
+  // do stuff
+})
+```
