@@ -84,7 +84,7 @@ For RSA encryption and decryption, only OAEP padding is supported and only using
 nCrypto.rsa.encrypt(key, data).then(function (result) {
   // result is a buffer
 });
-nCrypto.rsa.encrypt(key, encryptedData).then(function (result) {
+nCrypto.rsa.decrypt(key, encryptedData).then(function (result) {
   // result is a buffer
 });
 ```
